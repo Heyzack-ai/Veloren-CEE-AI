@@ -193,9 +193,47 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## 🚀 Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Quick Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/HeyZack-Domotique/Veloren-CEE-AI)
+
+### Manual Deployment Steps
+
+1. **Via Vercel Dashboard**:
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New Project"
+   - Import repository: `HeyZack-Domotique/Veloren-CEE-AI`
+   - Vercel auto-detects Next.js settings
+   - Click "Deploy"
+
+2. **Via Vercel CLI**:
+   ```bash
+   # Install Vercel CLI
+   npm i -g vercel
+   
+   # Deploy to preview
+   vercel
+   
+   # Deploy to production
+   vercel --prod
+   ```
+
+### Build Configuration
+
+The app includes a `vercel.json` with optimized settings:
+- Build command: `npm run build`
+- Framework: Next.js
+- Output directory: `.next`
+
+### Environment Variables
+
+For production deployment, configure these in Vercel dashboard:
+```env
+# Optional: Add your API endpoints when backend is ready
+NEXT_PUBLIC_API_URL=your_api_url
+```
+
+Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ## 📄 License
 
