@@ -10,8 +10,10 @@ import { mockProcesses } from '@/lib/mock-data/processes';
 import { Process } from '@/types/process';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/i18n';
 
 export default function ProcessesPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -19,38 +21,38 @@ export default function ProcessesPage() {
   const filters: Filter[] = [
     {
       id: 'search',
-      label: 'Recherche',
+      label: t('common.search'),
       type: 'search',
-      placeholder: 'Rechercher un processus...',
+      placeholder: t('processes.filter.search', undefined, 'Rechercher un processus...'),
       value: searchQuery,
       onChange: setSearchQuery,
     },
     {
       id: 'category',
-      label: 'Catégorie',
+      label: t('processes.filter.category'),
       type: 'select',
-      placeholder: 'Toutes les catégories',
+      placeholder: t('processes.filter.allCategories'),
       value: categoryFilter,
       onChange: setCategoryFilter,
       options: [
-        { label: 'Toutes les catégories', value: '' },
-        { label: 'CEE Résidentiel', value: 'cee_residential' },
-        { label: 'CEE Tertiaire', value: 'cee_tertiary' },
-        { label: 'CEE Industriel', value: 'cee_industrial' },
-        { label: 'Personnalisé', value: 'custom' },
+        { label: t('processes.filter.allCategories'), value: '' },
+        { label: t('processes.category.cee_residential'), value: 'cee_residential' },
+        { label: t('processes.category.cee_tertiary'), value: 'cee_tertiary' },
+        { label: t('processes.category.cee_industrial'), value: 'cee_industrial' },
+        { label: t('processes.category.custom'), value: 'custom' },
       ],
     },
     {
       id: 'status',
-      label: 'Statut',
+      label: t('processes.filter.status'),
       type: 'select',
-      placeholder: 'Tous les statuts',
+      placeholder: t('processes.filter.allStatuses'),
       value: statusFilter,
       onChange: setStatusFilter,
       options: [
-        { label: 'Tous', value: '' },
-        { label: 'Actif', value: 'active' },
-        { label: 'Brouillon', value: 'draft' },
+        { label: t('common.all'), value: '' },
+        { label: t('common.active'), value: 'active' },
+        { label: t('common.draft'), value: 'draft' },
       ],
     },
   ];
@@ -75,20 +77,20 @@ export default function ProcessesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Processus</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('processes.title')}</h1>
           <p className="text-muted-foreground">
-            {filteredProcesses.length} processus configuré{filteredProcesses.length > 1 ? 's' : ''}
+            {t('processes.subtitle', { count: filteredProcesses.length, plural: filteredProcesses.length > 1 ? 's' : '' })}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
             <Plus className="h-4 w-4 mr-2" />
-            Importer un modèle
+            {t('processes.import')}
           </Button>
           <Button asChild>
             <Link href="/config/processes/new">
               <Plus className="h-4 w-4 mr-2" />
-              Créer un processus
+              {t('processes.create')}
             </Link>
           </Button>
         </div>
@@ -113,12 +115,7 @@ export default function ProcessesPage() {
 }
 
 function ProcessCard({ process }: { process: Process }) {
-  const categoryLabels = {
-    cee_residential: 'CEE Résidentiel',
-    cee_tertiary: 'CEE Tertiaire',
-    cee_industrial: 'CEE Industriel',
-    custom: 'Personnalisé',
-  };
+  const { t, lang } = useTranslation();
 
   return (
     <Card
@@ -135,13 +132,13 @@ function ProcessCard({ process }: { process: Process }) {
           </div>
           <div className="flex gap-1">
             {process.isActive ? (
-              <Badge variant="default" className="bg-green-600">Actif</Badge>
+              <Badge variant="default" className="bg-green-600">{t('processes.badge.active')}</Badge>
             ) : (
-              <Badge variant="secondary">Brouillon</Badge>
+              <Badge variant="secondary">{t('processes.badge.draft')}</Badge>
             )}
             {process.isCoupDePouce && (
               <Badge variant="outline" className="border-orange-500 text-orange-600">
-                Coup de pouce
+                {t('processes.badge.coupDePouce')}
               </Badge>
             )}
           </div>
@@ -151,22 +148,22 @@ function ProcessCard({ process }: { process: Process }) {
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <FileText className="h-4 w-4" />
-            <span>{process.documentCount} documents</span>
+            <span>{t('processes.stats.documents', { count: process.documentCount })}</span>
           </div>
           <div className="flex items-center gap-1">
             <CheckSquare className="h-4 w-4" />
-            <span>{process.ruleCount} règles</span>
+            <span>{t('processes.stats.rules', { count: process.ruleCount })}</span>
           </div>
           <div className="flex items-center gap-1">
             <Folder className="h-4 w-4" />
-            <span>{process.dossierCount} dossiers</span>
+            <span>{t('processes.stats.cases', { count: process.dossierCount })}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t">
           <div className="text-xs text-muted-foreground">
-            <p>Version {process.version}</p>
-            <p>Mis à jour le {new Date(process.updatedAt).toLocaleDateString('fr-FR')}</p>
+            <p>{t('processes.version', { version: process.version })}</p>
+            <p>{t('processes.updatedAt', { date: new Date(process.updatedAt).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US') })}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" asChild>

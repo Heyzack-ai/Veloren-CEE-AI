@@ -8,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Upload } from 'lucide-react';
 import { mockDocumentTypes } from '@/lib/mock-data/document-types';
 import Link from 'next/link';
+import { useTranslation } from '@/lib/i18n';
 
 type DocumentType = typeof mockDocumentTypes[0];
 
 export default function DocumentTypesPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [systemFilter, setSystemFilter] = useState('');
@@ -21,39 +23,39 @@ export default function DocumentTypesPage() {
   const filters: Filter[] = [
     {
       id: 'search',
-      label: 'Recherche',
+      label: t('documentTypes.filter.search'),
       type: 'search',
-      placeholder: 'Rechercher un type de document...',
+      placeholder: t('documentTypes.filter.searchPlaceholder'),
       value: searchQuery,
       onChange: setSearchQuery,
     },
     {
       id: 'category',
-      label: 'Catégorie',
+      label: t('documentTypes.filter.category'),
       type: 'select',
-      placeholder: 'Toutes les catégories',
+      placeholder: t('documentTypes.filter.categoryAll'),
       value: categoryFilter,
       onChange: setCategoryFilter,
       options: [
-        { label: 'Toutes les catégories', value: '' },
-        { label: 'Documents commerciaux', value: 'commercial' },
-        { label: 'Documents légaux', value: 'legal' },
-        { label: 'Documents administratifs', value: 'administrative' },
-        { label: 'Documents techniques', value: 'technical' },
-        { label: 'Photos', value: 'photos' },
+        { label: t('documentTypes.filter.categoryAll'), value: '' },
+        { label: t('documentTypes.category.commercial'), value: 'commercial' },
+        { label: t('documentTypes.category.legal'), value: 'legal' },
+        { label: t('documentTypes.category.administrative'), value: 'administrative' },
+        { label: t('documentTypes.category.technical'), value: 'technical' },
+        { label: t('documentTypes.category.photos'), value: 'photos' },
       ],
     },
     {
       id: 'system',
-      label: 'Type',
+      label: t('documentTypes.filter.type'),
       type: 'select',
-      placeholder: 'Tous',
+      placeholder: t('documentTypes.filter.typeAll'),
       value: systemFilter,
       onChange: setSystemFilter,
       options: [
-        { label: 'Tous', value: '' },
-        { label: 'Système', value: 'system' },
-        { label: 'Personnalisé', value: 'custom' },
+        { label: t('documentTypes.filter.typeAll'), value: '' },
+        { label: t('documentTypes.filter.typeSystem'), value: 'system' },
+        { label: t('documentTypes.filter.typeCustom'), value: 'custom' },
       ],
     },
   ];
@@ -76,73 +78,66 @@ export default function DocumentTypesPage() {
   const columns: Column<DocumentType>[] = [
     {
       key: 'code',
-      header: 'Code',
+      header: t('documentTypes.table.code'),
       cell: (docType) => (
         <div className="font-medium">{docType.code}</div>
       ),
     },
     {
       key: 'name',
-      header: 'Nom',
+      header: t('documentTypes.table.name'),
       cell: (docType) => <span>{docType.name}</span>,
     },
     {
       key: 'category',
-      header: 'Catégorie',
+      header: t('documentTypes.table.category'),
       cell: (docType) => {
-        const categoryLabels: Record<string, string> = {
-          commercial: 'Commercial',
-          legal: 'Légal',
-          administrative: 'Administratif',
-          technical: 'Technique',
-          photos: 'Photos',
-        };
-        return <Badge variant="outline">{categoryLabels[docType.category]}</Badge>;
+        return <Badge variant="outline">{t(`documentTypes.category.${docType.category}`)}</Badge>;
       },
     },
     {
       key: 'fields',
-      header: 'Champs',
+      header: t('documentTypes.table.fields'),
       cell: (docType) => (
         <span className="text-sm text-muted-foreground">
-          {docType.fieldSchema.length} champs
+          {t('documentTypes.stats.fields', { count: docType.fieldSchema.length })}
         </span>
       ),
     },
     {
       key: 'rules',
-      header: 'Règles',
+      header: t('documentTypes.table.rules'),
       cell: (docType) => (
         <span className="text-sm text-muted-foreground">
-          {docType.ruleCount} règles
+          {t('documentTypes.stats.rules', { count: docType.ruleCount })}
         </span>
       ),
     },
     {
       key: 'system',
-      header: 'Système',
+      header: t('documentTypes.table.system'),
       cell: (docType) => (
         docType.isSystem ? (
-          <Badge variant="secondary">Système</Badge>
+          <Badge variant="secondary">{t('documentTypes.badge.system')}</Badge>
         ) : (
-          <Badge variant="outline">Personnalisé</Badge>
+          <Badge variant="outline">{t('documentTypes.badge.custom')}</Badge>
         )
       ),
     },
     {
       key: 'status',
-      header: 'Statut',
+      header: t('documentTypes.table.status'),
       cell: (docType) => (
         docType.isActive ? (
-          <Badge variant="default" className="bg-green-600">Actif</Badge>
+          <Badge variant="default" className="bg-green-600">{t('common.active')}</Badge>
         ) : (
-          <Badge variant="secondary">Inactif</Badge>
+          <Badge variant="secondary">{t('common.inactive')}</Badge>
         )
       ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('documentTypes.table.actions'),
       cell: (docType) => (
         <Button variant="ghost" size="sm" asChild>
           <Link href={`/config/document-types/${docType.id}`}>
@@ -157,20 +152,23 @@ export default function DocumentTypesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Types de documents</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('documentTypes.title')}</h1>
           <p className="text-muted-foreground">
-            {filteredDocumentTypes.length} type{filteredDocumentTypes.length > 1 ? 's' : ''} de document
+            {t('documentTypes.subtitle', {
+              count: filteredDocumentTypes.length,
+              plural: filteredDocumentTypes.length > 1 ? 's' : ''
+            })}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
             <Upload className="h-4 w-4 mr-2" />
-            Importer
+            {t('documentTypes.import')}
           </Button>
           <Button asChild>
             <Link href="/config/document-types/new">
               <Plus className="h-4 w-4 mr-2" />
-              Créer un type
+              {t('documentTypes.create')}
             </Link>
           </Button>
         </div>

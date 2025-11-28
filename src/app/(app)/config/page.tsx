@@ -15,84 +15,87 @@ import Link from 'next/link';
 import { mockProcesses } from '@/lib/mock-data/processes';
 import { mockDocumentTypes } from '@/lib/mock-data/document-types';
 import { mockValidationRules } from '@/lib/mock-data/validation-rules';
-
-const configSections = [
-  {
-    title: 'Processus',
-    description: 'Configurer les processus CEE et leurs exigences documentaires',
-    href: '/config/processes',
-    icon: Cog,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-    stats: () => {
-      const active = mockProcesses.filter(p => p.isActive).length;
-      const total = mockProcesses.length;
-      return `${active} actifs sur ${total}`;
-    },
-    actions: [
-      { label: 'Voir tout', href: '/config/processes' },
-      { label: 'Créer', href: '/config/processes/new', icon: Plus },
-    ],
-  },
-  {
-    title: 'Règles de validation',
-    description: 'Gérer les règles de validation automatique des documents',
-    href: '/config/rules',
-    icon: CheckSquare,
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
-    stats: () => {
-      const active = mockValidationRules.filter(r => r.isActive).length;
-      const total = mockValidationRules.length;
-      return `${active} actives sur ${total}`;
-    },
-    actions: [
-      { label: 'Voir tout', href: '/config/rules' },
-      { label: 'Créer', href: '/config/rules/new', icon: Plus },
-    ],
-  },
-  {
-    title: 'Types de documents',
-    description: 'Définir les types de documents et leurs schémas de champs',
-    href: '/config/document-types',
-    icon: FileText,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
-    stats: () => {
-      const system = mockDocumentTypes.filter(d => d.isSystem).length;
-      const custom = mockDocumentTypes.filter(d => !d.isSystem).length;
-      return `${system} système, ${custom} personnalisés`;
-    },
-    actions: [
-      { label: 'Voir tout', href: '/config/document-types' },
-      { label: 'Créer', href: '/config/document-types/new', icon: Plus },
-    ],
-  },
-  {
-    title: 'Schémas de champs',
-    description: 'Configurer les schémas d\'extraction pour chaque type de document',
-    href: '/config/schemas',
-    icon: Layers,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
-    stats: () => {
-      const total = mockDocumentTypes.reduce((sum, d) => sum + (d.fieldSchema?.length || 0), 0);
-      return `${total} champs configurés`;
-    },
-    actions: [
-      { label: 'Voir tout', href: '/config/schemas' },
-    ],
-  },
-];
+import { useTranslation } from '@/lib/i18n';
 
 export default function ConfigPage() {
+  const { t } = useTranslation();
+
+  const configSections = [
+    {
+      titleKey: 'config.sections.processes.title',
+      descriptionKey: 'config.sections.processes.description',
+      href: '/config/processes',
+      icon: Cog,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+      stats: () => {
+        const active = mockProcesses.filter(p => p.isActive).length;
+        const total = mockProcesses.length;
+        return t('config.sections.processes.stats', { active, total });
+      },
+      actions: [
+        { labelKey: 'config.actions.viewAll', href: '/config/processes' },
+        { labelKey: 'config.actions.create', href: '/config/processes/new', icon: Plus },
+      ],
+    },
+    {
+      titleKey: 'config.sections.rules.title',
+      descriptionKey: 'config.sections.rules.description',
+      href: '/config/rules',
+      icon: CheckSquare,
+      color: 'text-green-600',
+      bgColor: 'bg-green-100',
+      stats: () => {
+        const active = mockValidationRules.filter(r => r.isActive).length;
+        const total = mockValidationRules.length;
+        return t('config.sections.rules.stats', { active, total });
+      },
+      actions: [
+        { labelKey: 'config.actions.viewAll', href: '/config/rules' },
+        { labelKey: 'config.actions.create', href: '/config/rules/new', icon: Plus },
+      ],
+    },
+    {
+      titleKey: 'config.sections.documentTypes.title',
+      descriptionKey: 'config.sections.documentTypes.description',
+      href: '/config/document-types',
+      icon: FileText,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
+      stats: () => {
+        const system = mockDocumentTypes.filter(d => d.isSystem).length;
+        const custom = mockDocumentTypes.filter(d => !d.isSystem).length;
+        return t('config.sections.documentTypes.stats', { system, custom });
+      },
+      actions: [
+        { labelKey: 'config.actions.viewAll', href: '/config/document-types' },
+        { labelKey: 'config.actions.create', href: '/config/document-types/new', icon: Plus },
+      ],
+    },
+    {
+      titleKey: 'config.sections.schemas.title',
+      descriptionKey: 'config.sections.schemas.description',
+      href: '/config/schemas',
+      icon: Layers,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
+      stats: () => {
+        const count = mockDocumentTypes.reduce((sum, d) => sum + (d.fieldSchema?.length || 0), 0);
+        return t('config.sections.schemas.stats', { count });
+      },
+      actions: [
+        { labelKey: 'config.actions.viewAll', href: '/config/schemas' },
+      ],
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-heading font-bold">Configuration</h1>
+        <h1 className="text-3xl font-heading font-bold">{t('config.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          Gérer les processus, règles et paramètres du système
+          {t('config.subtitle')}
         </p>
       </div>
 
@@ -111,11 +114,11 @@ export default function ConfigPage() {
               </div>
               <CardTitle className="mt-4">
                 <Link href={section.href} className="hover:underline flex items-center gap-2">
-                  {section.title}
+                  {t(section.titleKey)}
                   <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               </CardTitle>
-              <CardDescription>{section.description}</CardDescription>
+              <CardDescription>{t(section.descriptionKey)}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
@@ -128,7 +131,7 @@ export default function ConfigPage() {
                   >
                     <Link href={action.href}>
                       {action.icon && <action.icon className="h-4 w-4 mr-1" />}
-                      {action.label}
+                      {t(action.labelKey)}
                     </Link>
                   </Button>
                 ))}
@@ -141,30 +144,30 @@ export default function ConfigPage() {
       {/* Quick Stats */}
       <Card>
         <CardHeader>
-          <CardTitle>Aperçu de la configuration</CardTitle>
+          <CardTitle>{t('config.overview.title')}</CardTitle>
           <CardDescription>
-            Résumé des éléments configurés dans le système
+            {t('config.overview.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 bg-muted rounded-lg text-center">
               <p className="text-2xl font-bold">{mockProcesses.length}</p>
-              <p className="text-sm text-muted-foreground">Processus</p>
+              <p className="text-sm text-muted-foreground">{t('config.overview.processes')}</p>
             </div>
             <div className="p-4 bg-muted rounded-lg text-center">
               <p className="text-2xl font-bold">{mockValidationRules.length}</p>
-              <p className="text-sm text-muted-foreground">Règles</p>
+              <p className="text-sm text-muted-foreground">{t('config.overview.rules')}</p>
             </div>
             <div className="p-4 bg-muted rounded-lg text-center">
               <p className="text-2xl font-bold">{mockDocumentTypes.length}</p>
-              <p className="text-sm text-muted-foreground">Types de documents</p>
+              <p className="text-sm text-muted-foreground">{t('config.overview.documentTypes')}</p>
             </div>
             <div className="p-4 bg-muted rounded-lg text-center">
               <p className="text-2xl font-bold">
                 {mockDocumentTypes.reduce((sum, d) => sum + (d.fieldSchema?.length || 0), 0)}
               </p>
-              <p className="text-sm text-muted-foreground">Champs</p>
+              <p className="text-sm text-muted-foreground">{t('config.overview.fields')}</p>
             </div>
           </div>
         </CardContent>

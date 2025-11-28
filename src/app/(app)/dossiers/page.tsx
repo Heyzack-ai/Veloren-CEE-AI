@@ -25,7 +25,8 @@ import { mockDossiers } from '@/lib/mock-data/dossiers';
 import { Search, Download, Plus, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslation } from '@/lib/i18n';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,7 @@ const uniqueInstallers = Array.from(new Map(mockDossiers.map(d => [d.installerId
 const uniqueValidators = Array.from(new Map(mockDossiers.filter(d => d.assignedValidatorId).map(d => [d.assignedValidatorId, { id: d.assignedValidatorId!, name: d.assignedValidatorName! }])).values());
 
 export default function DossiersPage() {
+  const { t, lang } = useTranslation();
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get('status') || 'all';
   
@@ -89,20 +91,20 @@ export default function DossiersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold">Dossiers</h1>
+          <h1 className="text-3xl font-heading font-bold">{t('cases.title')}</h1>
           <p className="text-muted-foreground mt-1">
-            {filteredDossiers.length} dossiers au total
+            {t('cases.subtitle', { count: filteredDossiers.length })}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
-            Exporter
+            {t('cases.export')}
           </Button>
           <Button asChild>
             <Link href="/upload">
               <Plus className="h-4 w-4 mr-2" />
-              Nouveau dossier
+              {t('cases.new')}
             </Link>
           </Button>
         </div>
@@ -113,7 +115,7 @@ export default function DossiersPage() {
         <div className="relative flex-1 min-w-[250px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher par référence, bénéficiaire, installateur..."
+            placeholder={t('cases.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -124,14 +126,14 @@ export default function DossiersPage() {
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="draft">Brouillon</SelectItem>
-            <SelectItem value="processing">En traitement</SelectItem>
-            <SelectItem value="awaiting_review">En attente</SelectItem>
-            <SelectItem value="approved">Approuvé</SelectItem>
-            <SelectItem value="rejected">Rejeté</SelectItem>
-            <SelectItem value="billed">Facturé</SelectItem>
-            <SelectItem value="paid">Payé</SelectItem>
+            <SelectItem value="all">{t('processes.filter.allStatuses')}</SelectItem>
+            <SelectItem value="draft">{t('common.draft')}</SelectItem>
+            <SelectItem value="processing">{t('status.processing')}</SelectItem>
+            <SelectItem value="awaiting_review">{t('status.awaiting_review')}</SelectItem>
+            <SelectItem value="approved">{t('status.approved')}</SelectItem>
+            <SelectItem value="rejected">{t('status.rejected')}</SelectItem>
+            <SelectItem value="billed">{t('billing.status.invoiced')}</SelectItem>
+            <SelectItem value="paid">{t('billing.status.paid')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={processFilter} onValueChange={setProcessFilter}>
@@ -139,7 +141,7 @@ export default function DossiersPage() {
             <SelectValue placeholder="Processus" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les processus</SelectItem>
+            <SelectItem value="all">{t('cases.filters.allProcesses')}</SelectItem>
             {uniqueProcesses.map((code) => (
               <SelectItem key={code} value={code}>{code}</SelectItem>
             ))}
@@ -150,7 +152,7 @@ export default function DossiersPage() {
             <SelectValue placeholder="Installateur" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les installateurs</SelectItem>
+            <SelectItem value="all">{t('cases.filters.allInstallers')}</SelectItem>
             {uniqueInstallers.map((inst) => (
               <SelectItem key={inst.id} value={inst.id}>{inst.name}</SelectItem>
             ))}
@@ -161,7 +163,7 @@ export default function DossiersPage() {
             <SelectValue placeholder="Validateur" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les validateurs</SelectItem>
+            <SelectItem value="all">{t('cases.filters.allValidators')}</SelectItem>
             {uniqueValidators.map((val) => (
               <SelectItem key={val.id} value={val.id}>{val.name}</SelectItem>
             ))}
@@ -174,14 +176,14 @@ export default function DossiersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Référence</TableHead>
-              <TableHead>Bénéficiaire</TableHead>
-              <TableHead>Processus</TableHead>
-              <TableHead>Installateur</TableHead>
-              <TableHead>Statut</TableHead>
-              <TableHead>Confiance</TableHead>
-              <TableHead>Validateur</TableHead>
-              <TableHead>Mis à jour</TableHead>
+              <TableHead>{t('cases.table.reference')}</TableHead>
+              <TableHead>{t('cases.table.beneficiary')}</TableHead>
+              <TableHead>{t('cases.table.process')}</TableHead>
+              <TableHead>{t('cases.table.installer')}</TableHead>
+              <TableHead>{t('cases.table.status')}</TableHead>
+              <TableHead>{t('cases.table.confidence')}</TableHead>
+              <TableHead>{t('cases.table.validator')}</TableHead>
+              <TableHead>{t('cases.table.updated')}</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -222,11 +224,11 @@ export default function DossiersPage() {
                 </TableCell>
                 <TableCell>
                   {dossier.assignedValidatorName || (
-                    <span className="text-muted-foreground text-sm">Non assigné</span>
+                    <span className="text-muted-foreground text-sm">{t('common.none', undefined, 'Non assigné')}</span>
                   )}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {formatDistanceToNow(dossier.updatedAt, { addSuffix: true, locale: fr })}
+                  {formatDistanceToNow(dossier.updatedAt, { addSuffix: true, locale: lang === 'fr' ? fr : enUS })}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
@@ -237,15 +239,15 @@ export default function DossiersPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link href={`/dossiers/${dossier.id}`}>Voir détails</Link>
+                        <Link href={`/dossiers/${dossier.id}`}>{t('actions.viewDetails')}</Link>
                       </DropdownMenuItem>
                       {dossier.status === 'awaiting_review' && (
                         <DropdownMenuItem asChild>
-                          <Link href={`/validation/${dossier.id}`}>Valider</Link>
+                          <Link href={`/validation/${dossier.id}`}>{t('actions.validate')}</Link>
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem>Assigner validateur</DropdownMenuItem>
-                      <DropdownMenuItem>Marquer prioritaire</DropdownMenuItem>
+                      <DropdownMenuItem>{t('actions.assignValidator')}</DropdownMenuItem>
+                      <DropdownMenuItem>{t('actions.markPriority')}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -259,12 +261,12 @@ export default function DossiersPage() {
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground">
           {filteredDossiers.length === 0
-            ? 'Aucun dossier à afficher'
-            : `Affichage de ${startIndex}-${endIndex} sur ${filteredDossiers.length} dossiers`}
+            ? t('cases.pagination.showing', { start: 0, end: 0, total: 0 }, 'Aucun dossier à afficher')
+            : t('cases.pagination.showing', { start: startIndex, end: endIndex, total: filteredDossiers.length })}
         </p>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Par page</span>
+            <span className="text-sm text-muted-foreground">{t('common.perPage', undefined, 'Par page')}</span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => {
@@ -290,7 +292,7 @@ export default function DossiersPage() {
               disabled={currentPage === 1 || filteredDossiers.length === 0}
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             >
-              Précédent
+              {t('cases.pagination.previous')}
             </Button>
             <Button
               variant="outline"
@@ -300,7 +302,7 @@ export default function DossiersPage() {
               }
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
             >
-              Suivant
+              {t('cases.pagination.next')}
             </Button>
           </div>
         </div>

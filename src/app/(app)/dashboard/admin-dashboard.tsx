@@ -22,7 +22,8 @@ import { mockDossiers } from '@/lib/mock-data/dossiers';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslation } from '@/lib/i18n';
 
 type KPICardProps = {
   title: string;
@@ -72,6 +73,7 @@ function KPICard({ title, value, change, changeLabel, icon, href, variant = 'blu
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { t, lang } = useTranslation();
   
   const pendingDossiers = mockDossiers.filter(d => d.status === 'awaiting_review');
   const pendingCount = pendingDossiers.length;
@@ -97,50 +99,50 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-heading font-bold">Tableau de bord</h1>
+        <h1 className="text-3xl font-heading font-bold">{t('dashboard.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          {new Date().toLocaleDateString('fr-FR', { 
+          {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
-          })} • Bonjour, {user?.name}
+          })} • {t('dashboard.welcome', { name: user?.name })}
         </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
-          title="En attente de validation"
+          title={t('dashboard.stats.validation')}
           value={pendingCount}
           change={12}
-          changeLabel="vs hier"
+          changeLabel={t('dashboard.stats.vsYesterday', { percent: 12 })}
           icon={<AlertCircle className="h-8 w-8" />}
           variant="orange"
           href="/dossiers?status=awaiting_review"
         />
         <KPICard
-          title="Traités aujourd'hui"
+          title={t('dashboard.stats.processed')}
           value={processedToday}
           change={8}
-          changeLabel="vs sem. dernière"
+          changeLabel={t('dashboard.stats.vsSemLastWeek', { percent: 8 })}
           icon={<CheckCircle className="h-8 w-8" />}
           variant="blue"
         />
         <KPICard
-          title="Taux de précision"
+          title={t('dashboard.stats.accuracy')}
           value={`${accuracyRate}%`}
           change={3}
-          changeLabel="vs sem. dernière"
+          changeLabel={t('dashboard.stats.vsLastWeek', { percent: 3 })}
           icon={<TrendingUp className="h-8 w-8" />}
           variant="green"
           href="/analytics"
         />
         <KPICard
-          title="Temps moyen"
+          title={t('dashboard.stats.avgTime')}
           value={`${avgProcessingTime}min`}
           change={-5}
-          changeLabel="amélioration"
+          changeLabel={t('dashboard.stats.improvement', { percent: 5 })}
           icon={<Clock className="h-8 w-8" />}
           variant="purple"
         />
@@ -152,15 +154,15 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Aperçu des dossiers</CardTitle>
+              <CardTitle>{t('dashboard.cases.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="all">
                 <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="all">Tous ({mockDossiers.length})</TabsTrigger>
-                  <TabsTrigger value="new">Nouveaux ({newCount})</TabsTrigger>
-                  <TabsTrigger value="pending">En attente ({pendingCount})</TabsTrigger>
-                  <TabsTrigger value="approved">Approuvés ({approvedCount})</TabsTrigger>
+                  <TabsTrigger value="all">{t('dashboard.cases.all', { count: mockDossiers.length })}</TabsTrigger>
+                  <TabsTrigger value="new">{t('dashboard.cases.new', { count: newCount })}</TabsTrigger>
+                  <TabsTrigger value="pending">{t('dashboard.cases.pending', { count: pendingCount })}</TabsTrigger>
+                  <TabsTrigger value="approved">{t('dashboard.cases.approved', { count: approvedCount })}</TabsTrigger>
                 </TabsList>
                 
                 {/* All Dossiers Tab */}
@@ -186,14 +188,14 @@ export default function AdminDashboard() {
                             <ConfidenceIndicator value={dossier.confidence} showPercentage={false} />
                           </div>
                           <span className="text-sm text-muted-foreground whitespace-nowrap">
-                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: fr })}
+                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: lang === 'fr' ? fr : enUS })}
                           </span>
                         </div>
                       </Link>
                     ))}
                   </div>
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="/dossiers">Voir tous les dossiers</Link>
+                    <Link href="/dossiers">{t('dashboard.cases.viewAll')}</Link>
                   </Button>
                 </TabsContent>
 
@@ -220,17 +222,17 @@ export default function AdminDashboard() {
                             <ConfidenceIndicator value={dossier.confidence} showPercentage={false} />
                           </div>
                           <span className="text-sm text-muted-foreground whitespace-nowrap">
-                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: fr })}
+                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: lang === 'fr' ? fr : enUS })}
                           </span>
                         </div>
                       </Link>
                     ))}
                   </div>
                   {newDossiers.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">Aucun nouveau dossier cette semaine</p>
+                    <p className="text-center text-muted-foreground py-4">{t('dashboard.cases.noNew')}</p>
                   )}
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="/dossiers">Voir tous les dossiers</Link>
+                    <Link href="/dossiers">{t('dashboard.cases.viewAll')}</Link>
                   </Button>
                 </TabsContent>
 
@@ -257,17 +259,17 @@ export default function AdminDashboard() {
                             <ConfidenceIndicator value={dossier.confidence} showPercentage={false} />
                           </div>
                           <span className="text-sm text-muted-foreground whitespace-nowrap">
-                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: fr })}
+                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: lang === 'fr' ? fr : enUS })}
                           </span>
                         </div>
                       </Link>
                     ))}
                   </div>
                   {pendingDossiers.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">Aucun dossier en attente</p>
+                    <p className="text-center text-muted-foreground py-4">{t('dashboard.cases.noPending')}</p>
                   )}
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="/dossiers?status=awaiting_review">Voir tous les dossiers en attente</Link>
+                    <Link href="/dossiers?status=awaiting_review">{t('dashboard.cases.viewAll')}</Link>
                   </Button>
                 </TabsContent>
 
@@ -294,17 +296,17 @@ export default function AdminDashboard() {
                             <ConfidenceIndicator value={dossier.confidence} showPercentage={false} />
                           </div>
                           <span className="text-sm text-muted-foreground whitespace-nowrap">
-                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: fr })}
+                            {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: lang === 'fr' ? fr : enUS })}
                           </span>
                         </div>
                       </Link>
                     ))}
                   </div>
                   {approvedDossiers.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">Aucun dossier approuvé</p>
+                    <p className="text-center text-muted-foreground py-4">{t('dashboard.cases.noApproved')}</p>
                   )}
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="/dossiers?status=approved">Voir tous les dossiers approuvés</Link>
+                    <Link href="/dossiers?status=approved">{t('dashboard.cases.viewAll')}</Link>
                   </Button>
                 </TabsContent>
               </Tabs>
@@ -317,31 +319,31 @@ export default function AdminDashboard() {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Actions rapides</CardTitle>
+              <CardTitle>{t('dashboard.actions.title')}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               <Button variant="outline" className="h-20 flex-col gap-2" asChild>
                 <Link href="/upload">
                   <Upload className="h-5 w-5" />
-                  <span className="text-xs">Nouveau dossier</span>
+                  <span className="text-xs">{t('dashboard.actions.newCase')}</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-20 flex-col gap-2" asChild>
                 <Link href="/installers/new">
                   <Users className="h-5 w-5" />
-                  <span className="text-xs">Ajouter installateur</span>
+                  <span className="text-xs">{t('dashboard.actions.addInstaller')}</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-20 flex-col gap-2" asChild>
                 <Link href="/config/processes">
                   <SettingsIcon className="h-5 w-5" />
-                  <span className="text-xs">Configurer processus</span>
+                  <span className="text-xs">{t('dashboard.actions.configProcesses')}</span>
                 </Link>
               </Button>
               <Button variant="outline" className="h-20 flex-col gap-2" asChild>
                 <Link href="/analytics">
                   <FileText className="h-5 w-5" />
-                  <span className="text-xs">Voir rapports</span>
+                  <span className="text-xs">{t('dashboard.actions.viewReports')}</span>
                 </Link>
               </Button>
             </CardContent>
@@ -350,22 +352,22 @@ export default function AdminDashboard() {
           {/* System Status */}
           <Card>
             <CardHeader>
-              <CardTitle>État du système</CardTitle>
+              <CardTitle>{t('dashboard.system.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { name: 'API', status: 'healthy' },
-                  { name: 'Base de données', status: 'healthy' },
-                  { name: 'Stockage', status: 'healthy' },
-                  { name: 'Services IA', status: 'healthy' },
-                  { name: 'Recherche', status: 'healthy' },
+                  { nameKey: 'dashboard.system.api', status: 'healthy' },
+                  { nameKey: 'dashboard.system.database', status: 'healthy' },
+                  { nameKey: 'dashboard.system.storage', status: 'healthy' },
+                  { nameKey: 'dashboard.system.ai', status: 'healthy' },
+                  { nameKey: 'dashboard.system.search', status: 'healthy' },
                 ].map((service) => (
-                  <div key={service.name} className="flex items-center justify-between">
-                    <span className="text-sm">{service.name}</span>
+                  <div key={service.nameKey} className="flex items-center justify-between">
+                    <span className="text-sm">{t(service.nameKey)}</span>
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-green-500" />
-                      <span className="text-xs text-muted-foreground">Opérationnel</span>
+                      <span className="text-xs text-muted-foreground">{t('dashboard.system.operational')}</span>
                     </div>
                   </div>
                 ))}
