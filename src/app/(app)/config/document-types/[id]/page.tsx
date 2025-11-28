@@ -57,6 +57,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { useTranslation } from '@/lib/i18n';
 
 type PageProps = {
   params: { id: string };
@@ -76,28 +77,6 @@ const dataTypeIcons: Record<FieldDataType, React.ReactNode> = {
   signature: <PenTool className="h-4 w-4" />,
 };
 
-const dataTypeLabels: Record<FieldDataType, string> = {
-  string: 'Texte',
-  integer: 'Entier',
-  decimal: 'Décimal',
-  currency: 'Monétaire',
-  date: 'Date',
-  boolean: 'Booléen',
-  email: 'Email',
-  phone: 'Téléphone',
-  address: 'Adresse',
-  enum: 'Liste de valeurs',
-  signature: 'Signature',
-};
-
-const categoryLabels: Record<DocumentTypeCategory, string> = {
-  commercial: 'Commercial',
-  legal: 'Légal',
-  administrative: 'Administratif',
-  technical: 'Technique',
-  photos: 'Photos',
-};
-
 const defaultFieldSchema: Omit<FieldSchema, 'id'> = {
   internalName: '',
   displayName: '',
@@ -109,6 +88,7 @@ const defaultFieldSchema: Omit<FieldSchema, 'id'> = {
 };
 
 export default function DocumentTypeConfigPage({ params }: PageProps) {
+  const { t } = useTranslation();
   const { id } = params;
   const isNew = id === 'new';
   const existingDocType = isNew ? null : mockDocumentTypes.find((dt) => dt.id === id);
@@ -207,7 +187,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
       ...field,
       id: `f-${Date.now()}`,
       internalName: `${field.internalName}_copy`,
-      displayName: `${field.displayName} (copie)`,
+      displayName: `${field.displayName} ${t('docTypeWizard.common.copy')}`,
     };
     setFieldSchema([...fieldSchema, duplicated]);
   };
@@ -233,7 +213,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
   // Group fields by fieldGroup
   const groupedFields = fieldSchema.reduce(
     (acc, field) => {
-      const group = field.fieldGroup || 'Autres';
+      const group = field.fieldGroup || t('docTypeWizard.fields.othersGroup');
       if (!acc[group]) acc[group] = [];
       acc[group].push(field);
       return acc;
@@ -246,75 +226,75 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/dashboard" className="hover:text-foreground">
-          Accueil
+          {t('docTypeWizard.breadcrumb.home')}
         </Link>
         <span>/</span>
         <Link href="/config" className="hover:text-foreground">
-          Configuration
+          {t('docTypeWizard.breadcrumb.config')}
         </Link>
         <span>/</span>
         <Link href="/config/document-types" className="hover:text-foreground">
-          Types de documents
+          {t('docTypeWizard.breadcrumb.types')}
         </Link>
         <span>/</span>
-        <span className="text-foreground">{isNew ? 'Nouveau' : existingDocType?.code}</span>
+        <span className="text-foreground">{isNew ? t('docTypeWizard.breadcrumb.new') : existingDocType?.code}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isNew ? 'Créer un type de document' : `Modifier ${existingDocType?.code}`}
+            {isNew ? t('docTypeWizard.title.create') : t('docTypeWizard.title.edit', { code: existingDocType?.code })}
           </h1>
           <p className="text-muted-foreground">
             {isNew
-              ? 'Définir un nouveau type de document et ses champs'
-              : 'Modifier la configuration du type de document'}
+              ? t('docTypeWizard.subtitle.create')
+              : t('docTypeWizard.subtitle.edit')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href="/config/document-types">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
+              {t('docTypeWizard.button.back')}
             </Link>
           </Button>
           <Button variant="outline">
             <Eye className="h-4 w-4 mr-2" />
-            Aperçu
+            {t('docTypeWizard.button.preview')}
           </Button>
           <Button>
             <Save className="h-4 w-4 mr-2" />
-            Enregistrer
+            {t('docTypeWizard.button.save')}
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="basic" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="basic">Informations de base</TabsTrigger>
+          <TabsTrigger value="basic">{t('docTypeWizard.tab.basic')}</TabsTrigger>
           <TabsTrigger value="fields">
-            Schéma des champs
+            {t('docTypeWizard.tab.fields')}
             <Badge variant="secondary" className="ml-2">
               {fieldSchema.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="extraction">Paramètres d'extraction</TabsTrigger>
+          <TabsTrigger value="extraction">{t('docTypeWizard.tab.extraction')}</TabsTrigger>
         </TabsList>
 
         {/* Basic Information Tab */}
         <TabsContent value="basic" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Informations de base</CardTitle>
+              <CardTitle>{t('docTypeWizard.basic.title')}</CardTitle>
               <CardDescription>
-                Définir les informations principales du type de document
+                {t('docTypeWizard.basic.cardDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="code">Code *</Label>
+                  <Label htmlFor="code">{t('docTypeWizard.basic.code')}</Label>
                   <Input
                     id="code"
                     value={formData.code}
@@ -325,12 +305,12 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     disabled={!isNew && existingDocType?.isSystem}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Identifiant unique du type de document
+                    {t('docTypeWizard.basic.codeHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom *</Label>
+                  <Label htmlFor="name">{t('docTypeWizard.basic.name')}</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -340,7 +320,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category">Catégorie *</Label>
+                  <Label htmlFor="category">{t('docTypeWizard.basic.category')}</Label>
                   <Select
                     value={formData.category}
                     onValueChange={(value: DocumentTypeCategory) =>
@@ -351,9 +331,9 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(categoryLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
+                      {(['commercial', 'legal', 'administrative', 'technical', 'photos'] as DocumentTypeCategory[]).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {t(`docTypeWizard.category.${category}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -361,7 +341,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Pages attendues</Label>
+                  <Label>{t('docTypeWizard.basic.expectedPages')}</Label>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
@@ -379,7 +359,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                       }
                       className="w-20"
                     />
-                    <span className="text-muted-foreground">à</span>
+                    <span className="text-muted-foreground">{t('docTypeWizard.basic.pageRange.to')}</span>
                     <Input
                       type="number"
                       min="1"
@@ -396,40 +376,40 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                       }
                       className="w-20"
                     />
-                    <span className="text-muted-foreground">pages</span>
+                    <span className="text-muted-foreground">{t('docTypeWizard.basic.pageRange.pages')}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('docTypeWizard.basic.description')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Description du type de document..."
+                  placeholder={t('docTypeWizard.basic.descriptionPlaceholder')}
                   rows={3}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="classificationHints">Indices de classification</Label>
+                <Label htmlFor="classificationHints">{t('docTypeWizard.basic.classificationHints')}</Label>
                 <Input
                   id="classificationHints"
                   value={classificationHintsInput}
                   onChange={(e) => setClassificationHintsInput(e.target.value)}
-                  placeholder="devis, quote, proposition, estimation"
+                  placeholder={t('docTypeWizard.basic.classificationHintsPlaceholder')}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Mots-clés séparés par des virgules pour aider à classifier ce type de document
+                  {t('docTypeWizard.basic.classificationHintsHint')}
                 </p>
               </div>
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>Actif</Label>
+                  <Label>{t('docTypeWizard.basic.active')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Ce type de document peut être utilisé dans les processus
+                    {t('docTypeWizard.basic.activeHint')}
                   </p>
                 </div>
                 <Switch
@@ -447,14 +427,14 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Schéma des champs</CardTitle>
+                  <CardTitle>{t('docTypeWizard.fields.title')}</CardTitle>
                   <CardDescription>
-                    Définir les champs à extraire de ce type de document
+                    {t('docTypeWizard.fields.description')}
                   </CardDescription>
                 </div>
                 <Button size="sm" onClick={() => setShowAddFieldDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un champ
+                  {t('docTypeWizard.fields.addField')}
                 </Button>
               </div>
             </CardHeader>
@@ -462,9 +442,9 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
               {fieldSchema.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Aucun champ défini</p>
+                  <p className="text-lg font-medium">{t('docTypeWizard.fields.emptyTitle')}</p>
                   <p className="text-sm mt-1">
-                    Cliquez sur "Ajouter un champ" pour commencer à définir le schéma
+                    {t('docTypeWizard.fields.emptyDescription')}
                   </p>
                   <Button
                     variant="outline"
@@ -472,7 +452,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     onClick={() => setShowAddFieldDialog(true)}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Ajouter le premier champ
+                    {t('docTypeWizard.fields.addFirstField')}
                   </Button>
                 </div>
               ) : (
@@ -509,15 +489,15 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                                   </div>
                                   <div className="flex items-center gap-2 mt-1">
                                     <Badge variant="outline" className="text-xs">
-                                      {dataTypeLabels[field.dataType]}
+                                      {t(`docTypeWizard.dataType.${field.dataType === 'string' ? 'text' : field.dataType}`)}
                                     </Badge>
                                     {field.required && (
                                       <Badge variant="secondary" className="text-xs">
-                                        Requis
+                                        {t('docTypeWizard.fields.required')}
                                       </Badge>
                                     )}
                                     <span className="text-xs text-muted-foreground">
-                                      Confiance: {field.confidenceThreshold}%
+                                      {t('docTypeWizard.fields.confidence', { value: field.confidenceThreshold })}
                                     </span>
                                   </div>
                                 </div>
@@ -587,7 +567,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                                   <div className="grid md:grid-cols-2 gap-4 mt-4">
                                     <div>
                                       <Label className="text-xs text-muted-foreground">
-                                        Indices d'extraction
+                                        {t('docTypeWizard.fields.extractionHints')}
                                       </Label>
                                       <div className="flex flex-wrap gap-1 mt-1">
                                         {field.extractionHints.map((hint, i) => (
@@ -599,32 +579,32 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                                     </div>
                                     <div>
                                       <Label className="text-xs text-muted-foreground">
-                                        Post-traitement
+                                        {t('docTypeWizard.fields.postProcessing')}
                                       </Label>
                                       <div className="flex flex-wrap gap-1 mt-1">
                                         {field.postProcessing.uppercase && (
                                           <Badge variant="outline" className="text-xs">
-                                            Majuscules
+                                            {t('docTypeWizard.fields.uppercase')}
                                           </Badge>
                                         )}
                                         {field.postProcessing.lowercase && (
                                           <Badge variant="outline" className="text-xs">
-                                            Minuscules
+                                            {t('docTypeWizard.fields.lowercase')}
                                           </Badge>
                                         )}
                                         {field.postProcessing.trimWhitespace && (
                                           <Badge variant="outline" className="text-xs">
-                                            Trim
+                                            {t('docTypeWizard.fields.trim')}
                                           </Badge>
                                         )}
                                         {field.postProcessing.removeSpecialChars && (
                                           <Badge variant="outline" className="text-xs">
-                                            Sans caractères spéciaux
+                                            {t('docTypeWizard.fields.removeSpecialChars')}
                                           </Badge>
                                         )}
                                         {!Object.values(field.postProcessing).some(Boolean) && (
                                           <span className="text-xs text-muted-foreground">
-                                            Aucun
+                                            {t('docTypeWizard.fields.none')}
                                           </span>
                                         )}
                                       </div>
@@ -633,7 +613,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                                       field.crossReferenceFields.length > 0 && (
                                         <div className="md:col-span-2">
                                           <Label className="text-xs text-muted-foreground">
-                                            Champs de référence croisée
+                                            {t('docTypeWizard.fields.crossRefFields')}
                                           </Label>
                                           <div className="flex flex-wrap gap-1 mt-1">
                                             {field.crossReferenceFields.map((ref, i) => (
@@ -663,14 +643,14 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
         <TabsContent value="extraction" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Paramètres d'extraction</CardTitle>
+              <CardTitle>{t('docTypeWizard.extraction.title')}</CardTitle>
               <CardDescription>
-                Configuration avancée pour l'extraction des données
+                {t('docTypeWizard.extraction.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="defaultConfidence">Seuil de confiance par défaut (%)</Label>
+                <Label htmlFor="defaultConfidence">{t('docTypeWizard.extraction.defaultConfidence')}</Label>
                 <Input
                   id="defaultConfidence"
                   type="number"
@@ -679,15 +659,15 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                   defaultValue="85"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Seuil minimum de confiance pour valider une extraction
+                  {t('docTypeWizard.extraction.defaultConfidenceHint')}
                 </p>
               </div>
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>Validation OCR stricte</Label>
+                  <Label>{t('docTypeWizard.extraction.strictOcr')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Rejeter les extractions avec une qualité OCR insuffisante
+                    {t('docTypeWizard.extraction.strictOcrHint')}
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -695,9 +675,9 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>Extraction multi-pages</Label>
+                  <Label>{t('docTypeWizard.extraction.multiPage')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Permettre l'extraction de champs répartis sur plusieurs pages
+                    {t('docTypeWizard.extraction.multiPageHint')}
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -722,16 +702,16 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingField ? 'Modifier le champ' : 'Ajouter un nouveau champ'}
+              {editingField ? t('docTypeWizard.fieldDialog.titleEdit') : t('docTypeWizard.fieldDialog.titleAdd')}
             </DialogTitle>
             <DialogDescription>
-              Définir les propriétés du champ à extraire
+              {t('docTypeWizard.fieldDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="internalName">Nom interne *</Label>
+                <Label htmlFor="internalName">{t('docTypeWizard.fieldDialog.internalName')}</Label>
                 <Input
                   id="internalName"
                   value={newField.internalName}
@@ -744,12 +724,12 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                   placeholder="prime_cee"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Utilisé dans les règles et expressions
+                  {t('docTypeWizard.fieldDialog.internalNameHint')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="displayName">Nom affiché *</Label>
+                <Label htmlFor="displayName">{t('docTypeWizard.fieldDialog.displayName')}</Label>
                 <Input
                   id="displayName"
                   value={newField.displayName}
@@ -761,7 +741,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dataType">Type de données *</Label>
+                <Label htmlFor="dataType">{t('docTypeWizard.fieldDialog.dataType')}</Label>
                 <Select
                   value={newField.dataType}
                   onValueChange={(value: FieldDataType) =>
@@ -772,11 +752,11 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(dataTypeLabels).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
+                    {(['string', 'integer', 'decimal', 'currency', 'date', 'boolean', 'email', 'phone', 'address', 'enum', 'signature'] as FieldDataType[]).map((dataType) => (
+                      <SelectItem key={dataType} value={dataType}>
                         <div className="flex items-center gap-2">
-                          {dataTypeIcons[value as FieldDataType]}
-                          <span>{label}</span>
+                          {dataTypeIcons[dataType]}
+                          <span>{t(`docTypeWizard.dataType.${dataType === 'string' ? 'text' : dataType}`)}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -785,32 +765,32 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="fieldGroup">Groupe</Label>
+                <Label htmlFor="fieldGroup">{t('docTypeWizard.fieldDialog.group')}</Label>
                 <Input
                   id="fieldGroup"
                   value={newField.fieldGroup || ''}
                   onChange={(e) => setNewField({ ...newField, fieldGroup: e.target.value })}
-                  placeholder="Identification, Financial, Technical..."
+                  placeholder={t('docTypeWizard.fieldDialog.groupPlaceholder')}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="extractionHints">Indices d'extraction</Label>
+              <Label htmlFor="extractionHints">{t('docTypeWizard.fieldDialog.extractionHints')}</Label>
               <Input
                 id="extractionHints"
                 value={hintsInput}
                 onChange={(e) => setHintsInput(e.target.value)}
-                placeholder="prime, cee, montant, énergie"
+                placeholder={t('docTypeWizard.fieldDialog.extractionHintsPlaceholder')}
               />
               <p className="text-xs text-muted-foreground">
-                Mots-clés séparés par des virgules pour aider à localiser ce champ
+                {t('docTypeWizard.fieldDialog.extractionHintsHint')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="confidenceThreshold">Seuil de confiance (%)</Label>
+                <Label htmlFor="confidenceThreshold">{t('docTypeWizard.fieldDialog.confidence')}</Label>
                 <Input
                   id="confidenceThreshold"
                   type="number"
@@ -835,7 +815,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                       setNewField({ ...newField, required: checked as boolean })
                     }
                   />
-                  <Label htmlFor="required">Champ requis</Label>
+                  <Label htmlFor="required">{t('docTypeWizard.fieldDialog.required')}</Label>
                 </div>
               </div>
             </div>
@@ -844,7 +824,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
             {newField.dataType === 'string' && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="maxLength">Longueur max</Label>
+                  <Label htmlFor="maxLength">{t('docTypeWizard.fieldDialog.maxLength')}</Label>
                   <Input
                     id="maxLength"
                     type="number"
@@ -860,7 +840,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="validationRegex">Regex de validation</Label>
+                  <Label htmlFor="validationRegex">{t('docTypeWizard.fieldDialog.validationRegex')}</Label>
                   <Input
                     id="validationRegex"
                     value={newField.validationRegex || ''}
@@ -878,7 +858,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
               newField.dataType === 'currency') && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="minValue">Valeur minimum</Label>
+                  <Label htmlFor="minValue">{t('docTypeWizard.fieldDialog.minValue')}</Label>
                   <Input
                     id="minValue"
                     type="number"
@@ -893,7 +873,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="maxValue">Valeur maximum</Label>
+                  <Label htmlFor="maxValue">{t('docTypeWizard.fieldDialog.maxValue')}</Label>
                   <Input
                     id="maxValue"
                     type="number"
@@ -912,7 +892,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
 
             {newField.dataType === 'enum' && (
               <div className="space-y-2">
-                <Label htmlFor="enumValues">Valeurs possibles</Label>
+                <Label htmlFor="enumValues">{t('docTypeWizard.fieldDialog.enumValues')}</Label>
                 <Textarea
                   id="enumValues"
                   value={newField.enumValues?.join('\n') || ''}
@@ -925,12 +905,12 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                   placeholder="Option 1&#10;Option 2&#10;Option 3"
                   rows={4}
                 />
-                <p className="text-xs text-muted-foreground">Une valeur par ligne</p>
+                <p className="text-xs text-muted-foreground">{t('docTypeWizard.fieldDialog.enumValuesHint')}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label>Post-traitement</Label>
+              <Label>{t('docTypeWizard.fieldDialog.postProcessing')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -948,7 +928,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     }
                   />
                   <Label htmlFor="uppercase" className="text-sm">
-                    Majuscules
+                    {t('docTypeWizard.fields.uppercase')}
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -967,7 +947,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     }
                   />
                   <Label htmlFor="lowercase" className="text-sm">
-                    Minuscules
+                    {t('docTypeWizard.fields.lowercase')}
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -985,7 +965,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     }
                   />
                   <Label htmlFor="trimWhitespace" className="text-sm">
-                    Supprimer espaces
+                    {t('docTypeWizard.fieldDialog.postProcessingHint')}
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -1003,14 +983,14 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     }
                   />
                   <Label htmlFor="removeSpecialChars" className="text-sm">
-                    Sans caractères spéciaux
+                    {t('docTypeWizard.fields.removeSpecialChars')}
                   </Label>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="crossReference">Champs de référence croisée</Label>
+              <Label htmlFor="crossReference">{t('docTypeWizard.fieldDialog.crossRefFields')}</Label>
               <Input
                 id="crossReference"
                 value={newField.crossReferenceFields?.join(', ') || ''}
@@ -1023,10 +1003,10 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                       .filter(Boolean),
                   })
                 }
-                placeholder="facture.prime_cee, cdc.prime_montant"
+                placeholder={t('docTypeWizard.fieldDialog.crossRefFieldsPlaceholder')}
               />
               <p className="text-xs text-muted-foreground">
-                Champs d'autres documents pour comparaison automatique
+                {t('docTypeWizard.fieldDialog.crossRefFieldsHint')}
               </p>
             </div>
           </div>
@@ -1040,7 +1020,7 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                 setHintsInput('');
               }}
             >
-              Annuler
+              {t('docTypeWizard.fieldDialog.cancel')}
             </Button>
             <Button
               onClick={handleAddField}
@@ -1049,12 +1029,12 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
               {editingField ? (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Enregistrer
+                  {t('docTypeWizard.button.save')}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Ajouter
+                  {t('docTypeWizard.fieldDialog.add')}
                 </>
               )}
             </Button>

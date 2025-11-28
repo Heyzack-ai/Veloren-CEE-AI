@@ -3,9 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle, 
-  Clock, 
+import {
+  CheckCircle,
+  Clock,
   AlertCircle,
   TrendingUp,
   ArrowUpRight,
@@ -17,7 +17,8 @@ import { mockDossiers } from '@/lib/mock-data/dossiers';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslation } from '@/lib/i18n';
 
 type KPICardProps = {
   title: string;
@@ -64,12 +65,13 @@ function KPICard({ title, value, change, changeLabel, icon, variant = 'blue' }: 
 
 export default function ValidatorDashboard() {
   const { user } = useAuth();
-  
+  const { t, lang } = useTranslation();
+
   // Mock data for validator
   const myQueueDossiers = mockDossiers
     .filter(d => d.assignedValidatorId === user?.id && d.status === 'awaiting_review')
     .slice(0, 5);
-  
+
   const unassignedDossiers = mockDossiers
     .filter(d => !d.assignedValidatorId && d.status === 'awaiting_review')
     .slice(0, 3);
@@ -82,48 +84,48 @@ export default function ValidatorDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-heading font-bold">Tableau de bord</h1>
+        <h1 className="text-3xl font-heading font-bold">{t('dashboard.title')}</h1>
         <p className="text-muted-foreground mt-1">
-          {new Date().toLocaleDateString('fr-FR', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })} • Bonjour, {user?.name}
+          {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })} • {t('dashboard.welcome', { name: user?.name })}
         </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
-          title="Ma file d'attente"
+          title={t('dashboard.validator.myQueue')}
           value={myQueueDossiers.length}
           change={-15}
-          changeLabel="vs hier"
+          changeLabel={t('dashboard.validator.vsYesterday')}
           icon={<AlertCircle className="h-8 w-8" />}
           variant="orange"
         />
         <KPICard
-          title="Validés aujourd'hui"
+          title={t('dashboard.validator.validatedToday')}
           value={validatedToday}
           change={12}
-          changeLabel="vs hier"
+          changeLabel={t('dashboard.validator.vsYesterday')}
           icon={<CheckCircle className="h-8 w-8" />}
           variant="blue"
         />
         <KPICard
-          title="En attente (total)"
+          title={t('dashboard.validator.totalPending')}
           value={totalPending}
           change={5}
-          changeLabel="vs hier"
+          changeLabel={t('dashboard.validator.vsYesterday')}
           icon={<Clock className="h-8 w-8" />}
           variant="purple"
         />
         <KPICard
-          title="Précision d'équipe"
+          title={t('dashboard.validator.teamAccuracy')}
           value={`${teamAccuracy}%`}
           change={2}
-          changeLabel="vs sem. dernière"
+          changeLabel={t('dashboard.validator.vsLastWeek')}
           icon={<TrendingUp className="h-8 w-8" />}
           variant="green"
         />
@@ -135,9 +137,9 @@ export default function ValidatorDashboard() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Ma file de validation</CardTitle>
+              <CardTitle>{t('dashboard.validator.myValidationQueue')}</CardTitle>
               <Button asChild size="sm">
-                <Link href="/validation">Voir tout</Link>
+                <Link href="/validation">{t('dashboard.validator.viewAll')}</Link>
               </Button>
             </CardHeader>
             <CardContent>
@@ -145,8 +147,8 @@ export default function ValidatorDashboard() {
                 {myQueueDossiers.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
-                    <p>Aucun dossier en attente</p>
-                    <p className="text-sm">Excellent travail !</p>
+                    <p>{t('dashboard.validator.noPending')}</p>
+                    <p className="text-sm">{t('dashboard.validator.excellentWork')}</p>
                   </div>
                 ) : (
                   myQueueDossiers.map((dossier) => (
@@ -163,7 +165,7 @@ export default function ValidatorDashboard() {
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium">{dossier.reference}</span>
                             {dossier.priority === 'high' && (
-                              <Badge variant="destructive" className="text-xs">Prioritaire</Badge>
+                              <Badge variant="destructive" className="text-xs">{t('dashboard.validator.priority')}</Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -174,7 +176,7 @@ export default function ValidatorDashboard() {
                           </p>
                         </div>
                         <Button asChild size="sm">
-                          <Link href={`/validation/${dossier.id}`}>Valider</Link>
+                          <Link href={`/validation/${dossier.id}`}>{t('dashboard.validator.validate')}</Link>
                         </Button>
                       </div>
                       <div className="flex items-center gap-4 mt-3">
@@ -182,7 +184,7 @@ export default function ValidatorDashboard() {
                           <ConfidenceIndicator value={dossier.confidence} />
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: fr })}
+                          {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: lang === 'fr' ? fr : enUS })}
                         </span>
                       </div>
                     </div>
@@ -192,7 +194,7 @@ export default function ValidatorDashboard() {
 
               {unassignedDossiers.length > 0 && (
                 <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-medium mb-3">Dossiers non assignés</h3>
+                  <h3 className="text-sm font-medium mb-3">{t('dashboard.validator.unassigned')}</h3>
                   <div className="space-y-2">
                     {unassignedDossiers.map((dossier) => (
                       <div
@@ -204,7 +206,7 @@ export default function ValidatorDashboard() {
                           <p className="text-xs text-muted-foreground">{dossier.beneficiary.name}</p>
                         </div>
                         <Button size="sm" variant="outline">
-                          Prendre en charge
+                          {t('dashboard.validator.takeCharge')}
                         </Button>
                       </div>
                     ))}
@@ -220,7 +222,7 @@ export default function ValidatorDashboard() {
           {/* Recent Validations */}
           <Card>
             <CardHeader>
-              <CardTitle>Validations récentes</CardTitle>
+              <CardTitle>{t('dashboard.validator.recentValidations')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -247,31 +249,31 @@ export default function ValidatorDashboard() {
           {/* Performance Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Résumé de performance</CardTitle>
+              <CardTitle>{t('dashboard.validator.performanceSummary')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Cette semaine</span>
-                    <span className="font-medium">42 dossiers</span>
+                    <span className="text-muted-foreground">{t('dashboard.validator.thisWeek')}</span>
+                    <span className="font-medium">42 {t('dashboard.validator.cases')}</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Taux d'approbation</span>
+                    <span className="text-muted-foreground">{t('dashboard.validator.approvalRate')}</span>
                     <span className="font-medium">89%</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Temps moyen</span>
+                    <span className="text-muted-foreground">{t('dashboard.validator.avgTime')}</span>
                     <span className="font-medium">12 min</span>
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-muted-foreground">Précision</span>
+                    <span className="text-muted-foreground">{t('dashboard.validator.accuracy')}</span>
                     <span className="font-medium">96%</span>
                   </div>
                 </div>

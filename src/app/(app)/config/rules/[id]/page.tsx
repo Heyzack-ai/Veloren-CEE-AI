@@ -23,12 +23,14 @@ import { mockProcesses } from '@/lib/mock-data/processes';
 import { ArrowLeft, Save, Play, Plus, Trash2, FileText, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { useTranslation } from '@/lib/i18n';
 
 type PageProps = {
   params: { id: string };
 };
 
 export default function RuleBuilderPage({ params }: PageProps) {
+  const { t } = useTranslation();
   const { id } = params;
   const isNew = id === 'new';
   const rule = isNew ? null : mockValidationRules.find(r => r.id === id);
@@ -129,37 +131,37 @@ export default function RuleBuilderPage({ params }: PageProps) {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/dashboard" className="hover:text-foreground">Accueil</Link>
+        <Link href="/dashboard" className="hover:text-foreground">{t('ruleWizard.breadcrumb.home')}</Link>
         <span>/</span>
-        <Link href="/config/rules" className="hover:text-foreground">Règles</Link>
+        <Link href="/config/rules" className="hover:text-foreground">{t('ruleWizard.breadcrumb.rules')}</Link>
         <span>/</span>
-        <span className="text-foreground">{isNew ? 'Nouvelle' : rule?.code}</span>
+        <span className="text-foreground">{isNew ? t('ruleWizard.breadcrumb.new') : rule?.code}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isNew ? 'Créer une règle de validation' : `Modifier ${rule?.code}`}
+            {isNew ? t('ruleWizard.title.create') : t('ruleWizard.title.edit', { code: rule?.code })}
           </h1>
           <p className="text-muted-foreground">
-            {isNew ? 'Définir une nouvelle règle de validation' : 'Modifier la règle de validation'}
+            {isNew ? t('ruleWizard.subtitle.create') : t('ruleWizard.subtitle.edit')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href="/config/rules">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
+              {t('ruleWizard.button.back')}
             </Link>
           </Button>
           <Button variant="outline">
             <Play className="h-4 w-4 mr-2" />
-            Tester la règle
+            {t('ruleWizard.button.test')}
           </Button>
           <Button>
             <Save className="h-4 w-4 mr-2" />
-            Enregistrer et activer
+            {t('ruleWizard.button.save')}
           </Button>
         </div>
       </div>
@@ -169,15 +171,15 @@ export default function RuleBuilderPage({ params }: PageProps) {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Informations de la règle</CardTitle>
+              <CardTitle>{t('ruleWizard.basic.title')}</CardTitle>
               <CardDescription>
-                Définir les informations de base de la règle
+                {t('ruleWizard.basic.cardDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="code">Code *</Label>
+                  <Label htmlFor="code">{t('ruleWizard.basic.code')}</Label>
                   <Input
                     id="code"
                     value={formData.code}
@@ -188,30 +190,30 @@ export default function RuleBuilderPage({ params }: PageProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom *</Label>
+                  <Label htmlFor="name">{t('ruleWizard.basic.name')}</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Cohérence Prime CEE"
+                    placeholder={t('ruleWizard.basic.namePlaceholder')}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('ruleWizard.basic.description')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Décrire ce que vérifie cette règle..."
+                  placeholder={t('ruleWizard.basic.descriptionPlaceholder')}
                   rows={2}
                 />
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">Type de règle *</Label>
+                  <Label htmlFor="type">{t('ruleWizard.basic.type')}</Label>
                   <Select
                     value={formData.type}
                     onValueChange={(value: any) => setFormData({ ...formData, type: value })}
@@ -220,15 +222,15 @@ export default function RuleBuilderPage({ params }: PageProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="document">Règle document</SelectItem>
-                      <SelectItem value="cross_document">Règle inter-documents</SelectItem>
-                      <SelectItem value="global">Règle globale</SelectItem>
+                      <SelectItem value="document">{t('ruleWizard.basic.typeDocument')}</SelectItem>
+                      <SelectItem value="cross_document">{t('ruleWizard.basic.typeCrossDocument')}</SelectItem>
+                      <SelectItem value="global">{t('ruleWizard.basic.typeGlobal')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="severity">Sévérité *</Label>
+                  <Label htmlFor="severity">{t('ruleWizard.basic.severity')}</Label>
                   <Select
                     value={formData.severity}
                     onValueChange={(value: any) => setFormData({ ...formData, severity: value })}
@@ -237,9 +239,9 @@ export default function RuleBuilderPage({ params }: PageProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="error">Erreur</SelectItem>
-                      <SelectItem value="warning">Avertissement</SelectItem>
-                      <SelectItem value="info">Information</SelectItem>
+                      <SelectItem value="error">{t('ruleWizard.basic.severityError')}</SelectItem>
+                      <SelectItem value="warning">{t('ruleWizard.basic.severityWarning')}</SelectItem>
+                      <SelectItem value="info">{t('ruleWizard.basic.severityInfo')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -252,7 +254,7 @@ export default function RuleBuilderPage({ params }: PageProps) {
                       onCheckedChange={(checked) => setFormData({ ...formData, autoReject: checked })}
                     />
                     <Label htmlFor="autoReject" className="text-sm">
-                      Rejet auto
+                      {t('ruleWizard.basic.autoReject')}
                     </Label>
                   </div>
                 </div>
@@ -262,16 +264,16 @@ export default function RuleBuilderPage({ params }: PageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Portée de la règle</CardTitle>
+              <CardTitle>{t('ruleWizard.scope.title')}</CardTitle>
               <CardDescription>
-                Définir à quels processus et documents cette règle s'applique
+                {t('ruleWizard.scope.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="processes">S'applique au processus</Label>
-                <Select 
-                  value={selectedProcessId} 
+                <Label htmlFor="processes">{t('ruleWizard.scope.process')}</Label>
+                <Select
+                  value={selectedProcessId}
                   onValueChange={(value) => {
                     setSelectedProcessId(value);
                     // Reset document types when process changes
@@ -279,10 +281,10 @@ export default function RuleBuilderPage({ params }: PageProps) {
                   }}
                 >
                   <SelectTrigger id="processes">
-                    <SelectValue placeholder="Sélectionner un processus" />
+                    <SelectValue placeholder={t('ruleWizard.scope.processPlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous les processus</SelectItem>
+                    <SelectItem value="all">{t('ruleWizard.scope.allProcesses')}</SelectItem>
                     {mockProcesses.map((process) => (
                       <SelectItem key={process.id} value={process.id}>
                         <div className="flex items-center gap-2">
@@ -295,16 +297,16 @@ export default function RuleBuilderPage({ params }: PageProps) {
                 </Select>
                 {selectedProcessId !== 'all' && (
                   <p className="text-xs text-muted-foreground">
-                    {mockProcesses.find(p => p.id === selectedProcessId)?.requiredDocuments.length || 0} types de documents disponibles pour ce processus
+                    {t('ruleWizard.scope.documentTypesAvailable', { count: mockProcesses.find(p => p.id === selectedProcessId)?.requiredDocuments.length || 0 })}
                   </p>
                 )}
               </div>
 
               {formData.type !== 'global' && (
                 <div className="space-y-2">
-                  <Label>Types de documents</Label>
+                  <Label>{t('ruleWizard.scope.documentTypes')}</Label>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Sélectionnez les types de documents concernés par cette règle
+                    {t('ruleWizard.scope.documentTypesHint')}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {availableDocumentTypes.map((docType) => (
@@ -322,14 +324,14 @@ export default function RuleBuilderPage({ params }: PageProps) {
                       >
                         {docType.name}
                         {selectedDocTypes.includes(docType.code) && (
-                          <span className="ml-1 text-xs">({docType.fieldSchema.length} champs)</span>
+                          <span className="ml-1 text-xs">{t('ruleWizard.scope.fieldsCount', { count: docType.fieldSchema.length })}</span>
                         )}
                       </Badge>
                     ))}
                   </div>
                   {selectedDocTypes.length === 0 && (
                     <p className="text-xs text-amber-600 mt-2">
-                      ⚠ Sélectionnez au moins un type de document pour accéder aux champs disponibles
+                      {t('ruleWizard.scope.warning')}
                     </p>
                   )}
                 </div>
@@ -341,15 +343,15 @@ export default function RuleBuilderPage({ params }: PageProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Constructeur de condition</CardTitle>
+                  <CardTitle>{t('ruleWizard.condition.title')}</CardTitle>
                   <CardDescription>
-                    Définir la logique de validation
+                    {t('ruleWizard.condition.description')}
                   </CardDescription>
                 </div>
                 <Tabs value={builderMode} onValueChange={(v: any) => setBuilderMode(v)}>
                   <TabsList>
-                    <TabsTrigger value="visual">Visuel</TabsTrigger>
-                    <TabsTrigger value="expression">Expression</TabsTrigger>
+                    <TabsTrigger value="visual">{t('ruleWizard.condition.tabVisual')}</TabsTrigger>
+                    <TabsTrigger value="expression">{t('ruleWizard.condition.tabExpression')}</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -360,13 +362,13 @@ export default function RuleBuilderPage({ params }: PageProps) {
                   {availableFields.length === 0 && (
                     <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/30">
                       <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Sélectionnez des types de documents pour accéder aux champs</p>
+                      <p className="text-sm">{t('ruleWizard.condition.emptyState')}</p>
                     </div>
                   )}
                   {conditions.map((condition, index) => (
                     <div key={index} className="flex gap-2 items-start p-3 border rounded-lg">
                       <div className="flex-1 grid md:grid-cols-4 gap-2">
-                        <Select 
+                        <Select
                           value={condition.field}
                           onValueChange={(value) => {
                             const newConditions = [...conditions];
@@ -375,7 +377,7 @@ export default function RuleBuilderPage({ params }: PageProps) {
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Champ source" />
+                            <SelectValue placeholder={t('ruleWizard.condition.sourceField')} />
                           </SelectTrigger>
                           <SelectContent>
                             {Object.entries(fieldsByDocType).map(([docType, fields]) => (
@@ -393,7 +395,7 @@ export default function RuleBuilderPage({ params }: PageProps) {
                           </SelectContent>
                         </Select>
 
-                        <Select 
+                        <Select
                           value={condition.operator}
                           onValueChange={(value) => {
                             const newConditions = [...conditions];
@@ -402,24 +404,24 @@ export default function RuleBuilderPage({ params }: PageProps) {
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Opérateur" />
+                            <SelectValue placeholder={t('ruleWizard.condition.operator')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="equals">égal à</SelectItem>
-                            <SelectItem value="not_equals">différent de</SelectItem>
-                            <SelectItem value="greater_than">supérieur à</SelectItem>
-                            <SelectItem value="less_than">inférieur à</SelectItem>
-                            <SelectItem value="greater_or_equal">supérieur ou égal à</SelectItem>
-                            <SelectItem value="less_or_equal">inférieur ou égal à</SelectItem>
-                            <SelectItem value="contains">contient</SelectItem>
-                            <SelectItem value="starts_with">commence par</SelectItem>
-                            <SelectItem value="ends_with">se termine par</SelectItem>
-                            <SelectItem value="is_empty">est vide</SelectItem>
-                            <SelectItem value="is_not_empty">n'est pas vide</SelectItem>
+                            <SelectItem value="equals">{t('ruleWizard.condition.operatorEquals')}</SelectItem>
+                            <SelectItem value="not_equals">{t('ruleWizard.condition.operatorNotEquals')}</SelectItem>
+                            <SelectItem value="greater_than">{t('ruleWizard.condition.operatorGreaterThan')}</SelectItem>
+                            <SelectItem value="less_than">{t('ruleWizard.condition.operatorLessThan')}</SelectItem>
+                            <SelectItem value="greater_or_equal">{t('ruleWizard.condition.operatorGreaterOrEqual')}</SelectItem>
+                            <SelectItem value="less_or_equal">{t('ruleWizard.condition.operatorLessOrEqual')}</SelectItem>
+                            <SelectItem value="contains">{t('ruleWizard.condition.operatorContains')}</SelectItem>
+                            <SelectItem value="starts_with">{t('ruleWizard.condition.operatorStartsWith')}</SelectItem>
+                            <SelectItem value="ends_with">{t('ruleWizard.condition.operatorEndsWith')}</SelectItem>
+                            <SelectItem value="is_empty">{t('ruleWizard.condition.operatorIsEmpty')}</SelectItem>
+                            <SelectItem value="is_not_empty">{t('ruleWizard.condition.operatorIsNotEmpty')}</SelectItem>
                           </SelectContent>
                         </Select>
 
-                        <Select 
+                        <Select
                           value={condition.valueType}
                           onValueChange={(value: 'static' | 'field') => {
                             const newConditions = [...conditions];
@@ -428,16 +430,16 @@ export default function RuleBuilderPage({ params }: PageProps) {
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Type" />
+                            <SelectValue placeholder={t('ruleWizard.condition.type')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="static">Valeur fixe</SelectItem>
-                            <SelectItem value="field">Autre champ</SelectItem>
+                            <SelectItem value="static">{t('ruleWizard.condition.typeStatic')}</SelectItem>
+                            <SelectItem value="field">{t('ruleWizard.condition.typeField')}</SelectItem>
                           </SelectContent>
                         </Select>
 
                         {condition.valueType === 'field' ? (
-                          <Select 
+                          <Select
                             value={condition.value}
                             onValueChange={(value) => {
                               const newConditions = [...conditions];
@@ -446,7 +448,7 @@ export default function RuleBuilderPage({ params }: PageProps) {
                             }}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Champ cible" />
+                              <SelectValue placeholder={t('ruleWizard.condition.targetField')} />
                             </SelectTrigger>
                             <SelectContent>
                               {Object.entries(fieldsByDocType).map(([docType, fields]) => (
@@ -464,8 +466,8 @@ export default function RuleBuilderPage({ params }: PageProps) {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <Input 
-                            placeholder="Valeur" 
+                          <Input
+                            placeholder={t('ruleWizard.condition.value')}
                             value={condition.value}
                             onChange={(e) => {
                               const newConditions = [...conditions];
@@ -493,7 +495,7 @@ export default function RuleBuilderPage({ params }: PageProps) {
                     disabled={availableFields.length === 0}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Ajouter une condition
+                    {t('ruleWizard.condition.addCondition')}
                   </Button>
                 </div>
               ) : (
@@ -506,7 +508,7 @@ export default function RuleBuilderPage({ params }: PageProps) {
                     className="font-mono text-sm"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Utiliser la syntaxe JavaScript pour définir la condition
+                    {t('ruleWizard.condition.expressionHint')}
                   </p>
                 </div>
               )}
@@ -515,20 +517,20 @@ export default function RuleBuilderPage({ params }: PageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Message d'erreur</CardTitle>
+              <CardTitle>{t('ruleWizard.error.title')}</CardTitle>
               <CardDescription>
-                Message affiché lorsque la règle échoue
+                {t('ruleWizard.error.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Textarea
                 value={formData.errorMessage}
                 onChange={(e) => setFormData({ ...formData, errorMessage: e.target.value })}
-                placeholder="Le montant de la prime CEE diffère entre les documents..."
+                placeholder={t('ruleWizard.error.placeholder')}
                 rows={3}
               />
               <p className="text-xs text-muted-foreground mt-2">
-                Utiliser {'{field_name}'} pour insérer des valeurs dynamiques
+                {t('ruleWizard.error.hint')}
               </p>
             </CardContent>
           </Card>
@@ -538,18 +540,18 @@ export default function RuleBuilderPage({ params }: PageProps) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Statut</CardTitle>
+              <CardTitle>{t('ruleWizard.sidebar.statusTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label>Règle active</Label>
+                <Label>{t('ruleWizard.sidebar.activeRule')}</Label>
                 <Switch
                   checked={formData.isActive}
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label>Rejet automatique</Label>
+                <Label>{t('ruleWizard.sidebar.autoReject')}</Label>
                 <Switch
                   checked={formData.autoReject}
                   onCheckedChange={(checked) => setFormData({ ...formData, autoReject: checked })}
@@ -560,23 +562,23 @@ export default function RuleBuilderPage({ params }: PageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Statistiques</CardTitle>
+              <CardTitle>{t('ruleWizard.sidebar.statisticsTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {!isNew && rule && (
                 <>
                   <div>
-                    <p className="text-sm text-muted-foreground">Évaluations</p>
+                    <p className="text-sm text-muted-foreground">{t('ruleWizard.sidebar.evaluations')}</p>
                     <p className="text-2xl font-bold">{rule.timesEvaluated}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Taux de réussite</p>
+                    <p className="text-sm text-muted-foreground">{t('ruleWizard.sidebar.successRate')}</p>
                     <p className="text-2xl font-bold text-green-600">
                       {((rule.passedCount / rule.timesEvaluated) * 100).toFixed(1)}%
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Contournements</p>
+                    <p className="text-sm text-muted-foreground">{t('ruleWizard.sidebar.overrides')}</p>
                     <p className="text-2xl font-bold text-orange-600">{rule.overrideCount}</p>
                   </div>
                 </>
@@ -586,15 +588,15 @@ export default function RuleBuilderPage({ params }: PageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle>Champs disponibles</CardTitle>
+              <CardTitle>{t('ruleWizard.sidebar.fieldsTitle')}</CardTitle>
               <CardDescription>
-                Cliquez pour copier le chemin du champ
+                {t('ruleWizard.sidebar.fieldsHint')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {selectedDocTypes.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Sélectionnez des types de documents pour voir les champs disponibles
+                  {t('ruleWizard.sidebar.fieldsEmptyState')}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -626,7 +628,7 @@ export default function RuleBuilderPage({ params }: PageProps) {
                                 key={f.fullPath}
                                 className="flex items-center justify-between px-3 py-1.5 hover:bg-muted/50 cursor-pointer group"
                                 onClick={() => insertFieldPath(f.fullPath)}
-                                title={`Cliquer pour copier: ${f.fullPath}`}
+                                title={t('ruleWizard.sidebar.clickToCopy', { path: f.fullPath })}
                               >
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs font-medium truncate">

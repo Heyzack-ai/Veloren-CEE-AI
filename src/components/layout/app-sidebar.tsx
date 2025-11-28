@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/lib/i18n';
 
 type NavItem = {
   title: string;
@@ -31,118 +32,118 @@ type AppSidebarProps = {
   collapsed?: boolean;
 };
 
-const adminNavItems: NavItem[] = [
+const getAdminNavItems = (t: (key: string) => string): NavItem[] => [
   {
-    title: 'Tableau de bord',
+    title: t('nav.dashboard'),
     href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    title: 'Dossiers',
+    title: t('nav.files'),
     href: '/dossiers',
     icon: Folder,
     badge: 12,
     children: [
-      { title: 'Tous les dossiers', href: '/dossiers', icon: FileText },
-      { title: 'En attente', href: '/dossiers?status=awaiting_review', icon: FileText, badge: 8 },
-      { title: 'Documents', href: '/documents', icon: FileText },
+      { title: t('nav.files.all'), href: '/dossiers', icon: FileText },
+      { title: t('nav.files.pending'), href: '/dossiers?status=awaiting_review', icon: FileText, badge: 8 },
+      { title: t('nav.files.documents'), href: '/documents', icon: FileText },
     ],
   },
   {
-    title: 'Configuration',
+    title: t('nav.configuration'),
     href: '/config',
     icon: Cog,
     children: [
-      { title: 'Processus', href: '/config/processes', icon: Cog },
-      { title: 'Types de documents', href: '/config/document-types', icon: FileText },
-      { title: 'Règles de validation', href: '/config/rules', icon: CheckSquare },
-      { title: 'Schémas de champs', href: '/config/schemas', icon: FileText },
+      { title: t('nav.configuration.processes'), href: '/config/processes', icon: Cog },
+      { title: t('nav.configuration.documentTypes'), href: '/config/document-types', icon: FileText },
+      { title: t('nav.configuration.rules'), href: '/config/rules', icon: CheckSquare },
+      { title: t('nav.configuration.schemas'), href: '/config/schemas', icon: FileText },
     ],
   },
   {
-    title: 'Utilisateurs',
+    title: t('nav.users'),
     href: '/users',
     icon: Users,
   },
   {
-    title: 'Installateurs',
+    title: t('nav.installers'),
     href: '/installers',
     icon: Users,
   },
   {
-    title: 'Facturation',
+    title: t('nav.billing'),
     href: '/billing',
     icon: CreditCard,
   },
   {
-    title: 'Analytique',
+    title: t('nav.analytics'),
     href: '/analytics',
     icon: BarChart3,
   },
   {
-    title: 'Journal d\'activité',
+    title: t('nav.activity'),
     href: '/activity',
     icon: Activity,
   },
   {
-    title: 'Paramètres',
+    title: t('nav.settings'),
     href: '/settings',
     icon: Settings,
   },
 ];
 
-const validatorNavItems: NavItem[] = [
+const getValidatorNavItems = (t: (key: string) => string): NavItem[] => [
   {
-    title: 'Tableau de bord',
+    title: t('nav.dashboard'),
     href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    title: 'Dossiers',
+    title: t('nav.files'),
     href: '/dossiers',
     icon: Folder,
     children: [
-      { title: 'Ma file', href: '/validation', icon: CheckSquare, badge: 5 },
-      { title: 'Tous les dossiers', href: '/dossiers', icon: FileText },
-      { title: 'En attente', href: '/dossiers?status=awaiting_review', icon: FileText },
-      { title: 'Documents', href: '/documents', icon: FileText },
+      { title: t('nav.files.myQueue'), href: '/validation', icon: CheckSquare, badge: 5 },
+      { title: t('nav.files.all'), href: '/dossiers', icon: FileText },
+      { title: t('nav.files.pending'), href: '/dossiers?status=awaiting_review', icon: FileText },
+      { title: t('nav.files.documents'), href: '/documents', icon: FileText },
     ],
   },
   {
-    title: 'Facturation',
+    title: t('nav.billing'),
     href: '/billing',
     icon: CreditCard,
   },
   {
-    title: 'Paramètres',
+    title: t('nav.settings'),
     href: '/settings',
     icon: Settings,
   },
 ];
 
-const installerNavItems: NavItem[] = [
+const getInstallerNavItems = (t: (key: string) => string): NavItem[] => [
   {
-    title: 'Tableau de bord',
+    title: t('nav.dashboard'),
     href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    title: 'Mes dossiers',
+    title: t('nav.myCases'),
     href: '/my-dossiers',
     icon: Folder,
   },
   {
-    title: 'Nouveau dossier',
+    title: t('nav.newCase'),
     href: '/upload',
     icon: Upload,
   },
   {
-    title: 'Mes paiements',
+    title: t('nav.myPayments'),
     href: '/my-payments',
     icon: CreditCard,
   },
   {
-    title: 'Paramètres',
+    title: t('nav.settings'),
     href: '/settings',
     icon: Settings,
   },
@@ -151,6 +152,11 @@ const installerNavItems: NavItem[] = [
 export function AppSidebar({ collapsed }: AppSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { t } = useTranslation();
+
+  const adminNavItems = getAdminNavItems(t);
+  const validatorNavItems = getValidatorNavItems(t);
+  const installerNavItems = getInstallerNavItems(t);
 
   const navItems = 
     user?.role === 'administrator' ? adminNavItems :

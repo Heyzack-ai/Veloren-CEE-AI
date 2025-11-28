@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useTranslation } from '@/lib/i18n';
 import {
   Select,
   SelectContent,
@@ -56,6 +57,7 @@ type PageProps = {
 };
 
 export default function ProcessConfigPage({ params }: PageProps) {
+  const { t } = useTranslation();
   const { id } = params;
   const isNew = id === 'new';
   const process = isNew ? null : mockProcesses.find(p => p.id === id);
@@ -178,11 +180,11 @@ export default function ProcessConfigPage({ params }: PageProps) {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'error':
-        return <Badge variant="destructive">Erreur</Badge>;
+        return <Badge variant="destructive">{t('rules.severity.error')}</Badge>;
       case 'warning':
-        return <Badge className="bg-yellow-100 text-yellow-800">Avertissement</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">{t('rules.severity.warning')}</Badge>;
       default:
-        return <Badge variant="secondary">Info</Badge>;
+        return <Badge variant="secondary">{t('rules.severity.info')}</Badge>;
     }
   };
 
@@ -190,90 +192,90 @@ export default function ProcessConfigPage({ params }: PageProps) {
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/dashboard" className="hover:text-foreground">Accueil</Link>
+        <Link href="/dashboard" className="hover:text-foreground">{t('processWizard.breadcrumb.home')}</Link>
         <span>/</span>
-        <Link href="/config/processes" className="hover:text-foreground">Processus</Link>
+        <Link href="/config/processes" className="hover:text-foreground">{t('processWizard.breadcrumb.processes')}</Link>
         <span>/</span>
-        <span className="text-foreground">{isNew ? 'Nouveau' : process?.code}</span>
+        <span className="text-foreground">{isNew ? t('processWizard.breadcrumb.new') : process?.code}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isNew ? 'Créer un processus' : `Modifier ${process?.code}`}
+            {isNew ? t('processWizard.title.create') : t('processWizard.title.edit', { code: process?.code })}
           </h1>
           <p className="text-muted-foreground">
-            {isNew ? 'Configurer un nouveau processus CEE' : 'Modifier la configuration du processus'}
+            {isNew ? t('processWizard.subtitle.create') : t('processWizard.subtitle.edit')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
             <Link href="/config/processes">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
+              {t('processWizard.button.back')}
             </Link>
           </Button>
           <Button variant="outline">
             <Eye className="h-4 w-4 mr-2" />
-            Aperçu
+            {t('processWizard.button.preview')}
           </Button>
           <Button variant="outline">
             <Save className="h-4 w-4 mr-2" />
-            Enregistrer brouillon
+            {t('processWizard.button.saveDraft')}
           </Button>
           <Button>
             <Save className="h-4 w-4 mr-2" />
-            Activer
+            {t('processWizard.button.activate')}
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="basic" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="basic">Informations de base</TabsTrigger>
-          <TabsTrigger value="documents">Documents requis</TabsTrigger>
-          <TabsTrigger value="rules">Règles de validation</TabsTrigger>
-          <TabsTrigger value="settings">Paramètres spécifiques</TabsTrigger>
+          <TabsTrigger value="basic">{t('processWizard.tab.basic')}</TabsTrigger>
+          <TabsTrigger value="documents">{t('processWizard.tab.documents')}</TabsTrigger>
+          <TabsTrigger value="rules">{t('processWizard.tab.rules')}</TabsTrigger>
+          <TabsTrigger value="settings">{t('processWizard.tab.settings')}</TabsTrigger>
         </TabsList>
 
         {/* Basic Information Tab */}
         <TabsContent value="basic" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Informations de base</CardTitle>
+              <CardTitle>{t('processWizard.basic.title')}</CardTitle>
               <CardDescription>
-                Définir les informations principales du processus
+                {t('processWizard.basic.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="code">Code *</Label>
+                  <Label htmlFor="code">{t('processWizard.basic.code')} *</Label>
                   <Input
                     id="code"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                    placeholder="BAR-TH-171"
+                    placeholder={t('processWizard.basic.codePlaceholder')}
                     disabled={!isNew}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Format: Lettres majuscules, chiffres et tirets uniquement
+                    {t('processWizard.basic.codeHint')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nom *</Label>
+                  <Label htmlFor="name">{t('processWizard.basic.name')} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Pompe à chaleur air/eau"
+                    placeholder={t('processWizard.basic.namePlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category">Catégorie *</Label>
+                  <Label htmlFor="category">{t('processWizard.basic.category')} *</Label>
                   <Select
                     value={formData.category}
                     onValueChange={(value: any) => setFormData({ ...formData, category: value })}
@@ -282,26 +284,26 @@ export default function ProcessConfigPage({ params }: PageProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cee_residential">CEE Résidentiel</SelectItem>
-                      <SelectItem value="cee_tertiary">CEE Tertiaire</SelectItem>
-                      <SelectItem value="cee_industrial">CEE Industriel</SelectItem>
-                      <SelectItem value="custom">Personnalisé</SelectItem>
+                      <SelectItem value="cee_residential">{t('processes.category.cee_residential')}</SelectItem>
+                      <SelectItem value="cee_tertiary">{t('processes.category.cee_tertiary')}</SelectItem>
+                      <SelectItem value="cee_industrial">{t('processes.category.cee_industrial')}</SelectItem>
+                      <SelectItem value="custom">{t('processes.category.custom')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="version">Version</Label>
+                  <Label htmlFor="version">{t('processWizard.basic.version')}</Label>
                   <Input
                     id="version"
                     value={formData.version}
                     onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                    placeholder="1.0"
+                    placeholder={t('processWizard.basic.versionPlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="validFrom">Valide à partir de</Label>
+                  <Label htmlFor="validFrom">{t('processWizard.basic.validFrom')}</Label>
                   <Input
                     id="validFrom"
                     type="date"
@@ -312,21 +314,21 @@ export default function ProcessConfigPage({ params }: PageProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t('processWizard.basic.descriptionLabel')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Description du processus..."
+                  placeholder={t('processWizard.basic.descriptionPlaceholder')}
                   rows={3}
                 />
               </div>
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>Coup de pouce</Label>
+                  <Label>{t('processWizard.basic.coupDePouce')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Marquer ce processus comme éligible au Coup de pouce
+                    {t('processWizard.basic.coupDePoucheDesc')}
                   </p>
                 </div>
                 <Switch
@@ -337,9 +339,9 @@ export default function ProcessConfigPage({ params }: PageProps) {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>Actif</Label>
+                  <Label>{t('processWizard.basic.active')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Activer ce processus pour la soumission de dossiers
+                    {t('processWizard.basic.activeDesc')}
                   </p>
                 </div>
                 <Switch
@@ -357,14 +359,14 @@ export default function ProcessConfigPage({ params }: PageProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Documents requis</CardTitle>
+                  <CardTitle>{t('processWizard.documents.title')}</CardTitle>
                   <CardDescription>
-                    Définir les types de documents nécessaires pour ce processus
+                    {t('processWizard.documents.description')}
                   </CardDescription>
                 </div>
                 <Button size="sm" onClick={() => setShowAddDocumentDialog(true)} disabled={availableDocTypes.length === 0}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un document
+                  {t('processWizard.documents.add')}
                 </Button>
               </div>
             </CardHeader>
@@ -372,28 +374,28 @@ export default function ProcessConfigPage({ params }: PageProps) {
               <div className="space-y-3">
                 {requiredDocuments.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>Aucun document requis.</p>
-                    <p className="text-sm mt-1">Cliquez sur "Ajouter un document" pour commencer.</p>
+                    <p>{t('processWizard.documents.empty')}</p>
+                    <p className="text-sm mt-1">{t('processWizard.documents.emptyHint')}</p>
                   </div>
                 ) : (
-                  requiredDocuments.map((doc, index) => (
+                  requiredDocuments.map((doc) => (
                     <div key={doc.id} className="flex items-center gap-3 p-4 border rounded-lg">
                       <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
                       <div className="flex-1 grid md:grid-cols-4 gap-4 items-center">
                         <div>
-                          <Label className="text-xs text-muted-foreground">Type de document</Label>
+                          <Label className="text-xs text-muted-foreground">{t('processWizard.documents.type')}</Label>
                           <p className="font-medium">{doc.documentType}</p>
                         </div>
                         <div>
-                          <Label className="text-xs text-muted-foreground">Requis</Label>
+                          <Label className="text-xs text-muted-foreground">{t('processWizard.documents.required')}</Label>
                           <div className="mt-1">
                             <Badge variant={doc.required ? 'default' : 'secondary'}>
-                              {doc.required ? 'Oui' : 'Optionnel'}
+                              {doc.required ? t('processWizard.documents.requiredYes') : t('processWizard.documents.requiredOptional')}
                             </Badge>
                           </div>
                         </div>
                         <div>
-                          <Label className="text-xs text-muted-foreground">Quantité</Label>
+                          <Label className="text-xs text-muted-foreground">{t('processWizard.documents.quantity')}</Label>
                           <p className="text-sm">
                             {doc.minCount === doc.maxCount ? doc.minCount : `${doc.minCount} - ${doc.maxCount}`}
                           </p>
@@ -402,9 +404,9 @@ export default function ProcessConfigPage({ params }: PageProps) {
                           <Button variant="ghost" size="sm">
                             <Settings className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => handleRemoveDocument(doc.id)}
                           >
@@ -419,12 +421,12 @@ export default function ProcessConfigPage({ params }: PageProps) {
 
               {availableDocTypes.length > 0 && requiredDocuments.length > 0 && (
                 <div className="mt-6 p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">Types de documents disponibles à ajouter</h4>
+                  <h4 className="font-medium mb-2">{t('processWizard.documents.available')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {availableDocTypes.map((docType) => (
-                      <Badge 
-                        key={docType.id} 
-                        variant="outline" 
+                      <Badge
+                        key={docType.id}
+                        variant="outline"
                         className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
                         onClick={() => {
                           setNewDocument({ ...newDocument, documentTypeId: docType.id });
@@ -448,14 +450,14 @@ export default function ProcessConfigPage({ params }: PageProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Règles de validation inter-documents</CardTitle>
+                  <CardTitle>{t('processWizard.rules.title')}</CardTitle>
                   <CardDescription>
-                    Sélectionner les règles de validation à appliquer pour ce processus
+                    {t('processWizard.rules.description')}
                   </CardDescription>
                 </div>
                 <Button size="sm" onClick={() => setShowAddRuleDialog(true)} disabled={availableRules.length === 0}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Ajouter une règle
+                  {t('processWizard.rules.add')}
                 </Button>
               </div>
             </CardHeader>
@@ -463,16 +465,16 @@ export default function ProcessConfigPage({ params }: PageProps) {
               <div className="space-y-3">
                 {processRules.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>Aucune règle configurée.</p>
-                    <p className="text-sm mt-1">Cliquez sur "Ajouter une règle" pour sélectionner des règles existantes.</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <p>{t('processWizard.rules.empty')}</p>
+                    <p className="text-sm mt-1">{t('processWizard.rules.emptyHint')}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="mt-4"
                       onClick={() => setShowAddRuleDialog(true)}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Parcourir les règles disponibles
+                      {t('processWizard.rules.browse')}
                     </Button>
                   </div>
                 ) : (
@@ -483,24 +485,24 @@ export default function ProcessConfigPage({ params }: PageProps) {
                       </div>
                       <div className="flex-1 grid md:grid-cols-4 gap-4 items-center">
                         <div>
-                          <Label className="text-xs text-muted-foreground">Règle</Label>
+                          <Label className="text-xs text-muted-foreground">{t('processWizard.rules.rule')}</Label>
                           <p className="font-medium">{rule.ruleName}</p>
                           <p className="text-xs text-muted-foreground">{rule.ruleCode}</p>
                         </div>
                         <div>
-                          <Label className="text-xs text-muted-foreground">Sévérité</Label>
+                          <Label className="text-xs text-muted-foreground">{t('processWizard.rules.severity')}</Label>
                           <div className="mt-1">
                             {getSeverityBadge(rule.severity)}
                           </div>
                         </div>
                         <div>
-                          <Label className="text-xs text-muted-foreground">Statut</Label>
+                          <Label className="text-xs text-muted-foreground">{t('processWizard.rules.statusLabel')}</Label>
                           <div className="flex items-center gap-2 mt-1">
-                            <Switch 
-                              checked={rule.enabled} 
+                            <Switch
+                              checked={rule.enabled}
                               onCheckedChange={() => handleToggleRule(rule.id)}
                             />
-                            <span className="text-sm">{rule.enabled ? 'Activée' : 'Désactivée'}</span>
+                            <span className="text-sm">{rule.enabled ? t('processWizard.rules.enabled') : t('processWizard.rules.disabled')}</span>
                           </div>
                         </div>
                         <div className="flex items-center justify-end gap-2">
@@ -509,9 +511,9 @@ export default function ProcessConfigPage({ params }: PageProps) {
                               <Settings className="h-4 w-4" />
                             </Link>
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => handleRemoveRule(rule.id)}
                           >
@@ -528,7 +530,7 @@ export default function ProcessConfigPage({ params }: PageProps) {
                 <div className="mt-4 text-center">
                   <Button variant="outline" size="sm" onClick={() => setShowAddRuleDialog(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Ajouter d'autres règles ({availableRules.length} disponibles)
+                    {t('processWizard.rules.addMore', { count: availableRules.length })}
                   </Button>
                 </div>
               )}
@@ -540,23 +542,23 @@ export default function ProcessConfigPage({ params }: PageProps) {
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Paramètres spécifiques au processus</CardTitle>
+              <CardTitle>{t('processWizard.settings.title')}</CardTitle>
               <CardDescription>
-                Configuration avancée pour ce type de processus
+                {t('processWizard.settings.description')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="kwhFormula">Formule de calcul kWh Cumac</Label>
+                <Label htmlFor="kwhFormula">{t('processWizard.settings.kwhFormula')}</Label>
                 <Textarea
                   id="kwhFormula"
-                  placeholder="surface * coefficient * climate_zone_factor"
+                  placeholder={t('processWizard.settings.kwhPlaceholder')}
                   rows={3}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Zones climatiques</Label>
+                <Label>{t('processWizard.settings.climateZones')}</Label>
                 <div className="flex gap-2">
                   <Badge variant="outline">H1</Badge>
                   <Badge variant="outline">H2</Badge>
@@ -565,15 +567,15 @@ export default function ProcessConfigPage({ params }: PageProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="certifications">Certifications RGE requises</Label>
+                <Label htmlFor="certifications">{t('processWizard.settings.certifications')}</Label>
                 <Input
                   id="certifications"
-                  placeholder="QualiPAC, QualiSol..."
+                  placeholder={t('processWizard.settings.certificationsPlaceholder')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="autoApprove">Seuil d'approbation automatique (%)</Label>
+                <Label htmlFor="autoApprove">{t('processWizard.settings.autoApprove')}</Label>
                 <Input
                   id="autoApprove"
                   type="number"
@@ -582,7 +584,7 @@ export default function ProcessConfigPage({ params }: PageProps) {
                   defaultValue="90"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Les dossiers avec un score de confiance supérieur seront approuvés automatiquement
+                  {t('processWizard.settings.autoApproveHint')}
                 </p>
               </div>
             </CardContent>
@@ -594,20 +596,20 @@ export default function ProcessConfigPage({ params }: PageProps) {
       <Dialog open={showAddDocumentDialog} onOpenChange={setShowAddDocumentDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Ajouter un document requis</DialogTitle>
+            <DialogTitle>{t('processWizard.addDocDialog.title')}</DialogTitle>
             <DialogDescription>
-              Sélectionner un type de document et configurer ses exigences
+              {t('processWizard.addDocDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="docType">Type de document *</Label>
+              <Label htmlFor="docType">{t('processWizard.addDocDialog.documentType')}</Label>
               <Select
                 value={newDocument.documentTypeId}
                 onValueChange={(value) => setNewDocument({ ...newDocument, documentTypeId: value })}
               >
                 <SelectTrigger id="docType">
-                  <SelectValue placeholder="Sélectionner un type de document" />
+                  <SelectValue placeholder={t('processWizard.addDocDialog.selectPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableDocTypes.map((docType) => (
@@ -624,8 +626,8 @@ export default function ProcessConfigPage({ params }: PageProps) {
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div>
-                <Label>Document requis</Label>
-                <p className="text-xs text-muted-foreground">Ce document est obligatoire pour le dossier</p>
+                <Label>{t('processWizard.addDocDialog.required')}</Label>
+                <p className="text-xs text-muted-foreground">{t('processWizard.addDocDialog.requiredHint')}</p>
               </div>
               <Switch
                 checked={newDocument.required}
@@ -635,22 +637,22 @@ export default function ProcessConfigPage({ params }: PageProps) {
 
             {!newDocument.required && (
               <div className="space-y-2">
-                <Label htmlFor="condition">Condition (optionnel)</Label>
+                <Label htmlFor="condition">{t('processWizard.addDocDialog.condition')}</Label>
                 <Input
                   id="condition"
-                  placeholder="ex: beneficiary.precarite !== 'CLASSIQUE'"
+                  placeholder={t('processWizard.addDocDialog.conditionPlaceholder')}
                   value={newDocument.condition}
                   onChange={(e) => setNewDocument({ ...newDocument, condition: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Condition pour laquelle ce document devient requis
+                  {t('processWizard.addDocDialog.conditionHint')}
                 </p>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="minCount">Quantité minimum</Label>
+                <Label htmlFor="minCount">{t('processWizard.addDocDialog.minCount')}</Label>
                 <Input
                   id="minCount"
                   type="number"
@@ -661,7 +663,7 @@ export default function ProcessConfigPage({ params }: PageProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="maxCount">Quantité maximum</Label>
+                <Label htmlFor="maxCount">{t('processWizard.addDocDialog.maxCount')}</Label>
                 <Input
                   id="maxCount"
                   type="number"
@@ -675,11 +677,11 @@ export default function ProcessConfigPage({ params }: PageProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDocumentDialog(false)}>
-              Annuler
+              {t('processWizard.addDocDialog.cancel')}
             </Button>
             <Button onClick={handleAddDocument} disabled={!newDocument.documentTypeId}>
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter
+              {t('processWizard.addDocDialog.add')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -689,19 +691,19 @@ export default function ProcessConfigPage({ params }: PageProps) {
       <Dialog open={showAddRuleDialog} onOpenChange={setShowAddRuleDialog}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Ajouter des règles de validation</DialogTitle>
+            <DialogTitle>{t('processWizard.addRuleDialog.title')}</DialogTitle>
             <DialogDescription>
-              Sélectionner les règles à appliquer pour ce processus
+              {t('processWizard.addRuleDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto py-4">
             {availableRules.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>Toutes les règles ont déjà été ajoutées.</p>
+                <p>{t('processWizard.addRuleDialog.allRulesAdded')}</p>
                 <Button variant="outline" size="sm" className="mt-4" asChild>
                   <Link href="/config/rules/new">
                     <Plus className="h-4 w-4 mr-2" />
-                    Créer une nouvelle règle
+                    {t('processWizard.addRuleDialog.createNew')}
                   </Link>
                 </Button>
               </div>
@@ -743,8 +745,7 @@ export default function ProcessConfigPage({ params }: PageProps) {
                       <div className="flex items-center gap-2 mt-2">
                         {getSeverityBadge(rule.severity)}
                         <Badge variant="secondary" className="text-xs">
-                          {rule.type === 'cross_document' ? 'Inter-documents' : 
-                           rule.type === 'document' ? 'Document' : 'Global'}
+                          {t(`rules.type.${rule.type}`)}
                         </Badge>
                       </div>
                     </div>
@@ -756,18 +757,21 @@ export default function ProcessConfigPage({ params }: PageProps) {
           <DialogFooter className="border-t pt-4">
             <div className="flex items-center justify-between w-full">
               <span className="text-sm text-muted-foreground">
-                {selectedRuleIds.length} règle(s) sélectionnée(s)
+                {t('processWizard.addRuleDialog.rulesSelected', { count: selectedRuleIds.length })}
               </span>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => {
                   setSelectedRuleIds([]);
                   setShowAddRuleDialog(false);
                 }}>
-                  Annuler
+                  {t('processWizard.addRuleDialog.cancel')}
                 </Button>
                 <Button onClick={handleAddRules} disabled={selectedRuleIds.length === 0}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Ajouter {selectedRuleIds.length > 0 && `(${selectedRuleIds.length})`}
+                  {selectedRuleIds.length > 0
+                    ? t('processWizard.addRuleDialog.addWithCount', { count: selectedRuleIds.length })
+                    : t('processWizard.addRuleDialog.add')
+                  }
                 </Button>
               </div>
             </div>

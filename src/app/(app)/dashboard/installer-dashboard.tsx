@@ -19,7 +19,8 @@ import { mockBillingDossiers } from '@/lib/mock-data/billing';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useTranslation } from '@/lib/i18n';
 
 // Simulate current installer ID
 const CURRENT_INSTALLER_ID = 'inst-1';
@@ -69,10 +70,11 @@ function KPICard({ title, value, change, changeLabel, icon, variant = 'blue' }: 
 
 export default function InstallerDashboard() {
   const { user } = useAuth();
-  
+  const { t, lang } = useTranslation();
+
   // Mock data for installer
   const myDossiers = mockDossiers.slice(0, 10);
-  const activeDossiers = myDossiers.filter(d => 
+  const activeDossiers = myDossiers.filter(d =>
     ['processing', 'awaiting_review'].includes(d.status)
   ).length;
   const approvedThisMonth = myDossiers.filter(d => d.status === 'approved').length;
@@ -88,7 +90,7 @@ export default function InstallerDashboard() {
     .reduce((sum, d) => sum + d.primeAmount, 0);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR', {
+    return new Intl.NumberFormat(lang === 'fr' ? 'fr-FR' : 'en-US', {
       style: 'currency',
       currency: 'EUR',
     }).format(amount);
@@ -98,13 +100,13 @@ export default function InstallerDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-heading font-bold">Bienvenue</h1>
+        <h1 className="text-3xl font-heading font-bold">{t('dashboard.installer.welcome')}</h1>
         <p className="text-muted-foreground mt-1">
-          EcoTherm Solutions • {new Date().toLocaleDateString('fr-FR', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          EcoTherm Solutions • {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
           })}
         </p>
       </div>
@@ -112,26 +114,26 @@ export default function InstallerDashboard() {
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <KPICard
-          title="Dossiers actifs"
+          title={t('dashboard.installer.activeCases')}
           value={activeDossiers}
           change={8}
-          changeLabel="vs mois dernier"
+          changeLabel={t('dashboard.installer.vsLastMonth')}
           icon={<FileText className="h-8 w-8" />}
           variant="blue"
         />
         <KPICard
-          title="Approuvés ce mois"
+          title={t('dashboard.installer.approvedThisMonth')}
           value={approvedThisMonth}
           change={15}
-          changeLabel="vs mois dernier"
+          changeLabel={t('dashboard.installer.vsLastMonth')}
           icon={<CheckCircle className="h-8 w-8" />}
           variant="green"
         />
         <KPICard
-          title="En attente de paiement"
+          title={t('dashboard.installer.pendingPayment')}
           value={pendingPayment}
           change={-5}
-          changeLabel="vs mois dernier"
+          changeLabel={t('dashboard.installer.vsLastMonth')}
           icon={<CreditCard className="h-8 w-8" />}
           variant="purple"
         />
@@ -148,16 +150,16 @@ export default function InstallerDashboard() {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-heading font-semibold mb-1">
-                  Démarrer un nouveau dossier CEE
+                  {t('dashboard.installer.startNewCase')}
                 </h3>
                 <p className="text-muted-foreground">
-                  Téléchargez vos documents et soumettez un nouveau dossier pour validation
+                  {t('dashboard.installer.startNewCaseDesc')}
                 </p>
               </div>
               <Button asChild size="lg">
                 <Link href="/upload">
                   <Upload className="h-4 w-4 mr-2" />
-                  Télécharger documents
+                  {t('dashboard.installer.uploadDocuments')}
                 </Link>
               </Button>
             </div>
@@ -167,9 +169,9 @@ export default function InstallerDashboard() {
         {/* Recent Dossiers */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Mes dossiers récents</CardTitle>
+            <CardTitle>{t('dashboard.installer.myRecentCases')}</CardTitle>
             <Button asChild variant="outline" size="sm">
-              <Link href="/my-dossiers">Voir tous mes dossiers</Link>
+              <Link href="/my-dossiers">{t('dashboard.installer.viewAll')}</Link>
             </Button>
           </CardHeader>
           <CardContent>
@@ -188,11 +190,11 @@ export default function InstallerDashboard() {
                       {dossier.beneficiary.name} • {dossier.processCode}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Soumis {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: fr })}
+                      {t('dashboard.installer.submitted')} {formatDistanceToNow(dossier.submittedAt, { addSuffix: true, locale: lang === 'fr' ? fr : enUS })}
                     </p>
                   </div>
                   <Button asChild variant="ghost" size="sm">
-                    <Link href={`/my-dossiers/${dossier.id}`}>Voir</Link>
+                    <Link href={`/my-dossiers/${dossier.id}`}>{t('dashboard.installer.view')}</Link>
                   </Button>
                 </div>
               ))}
@@ -205,26 +207,26 @@ export default function InstallerDashboard() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Mes paiements
+              {t('dashboard.installer.myPayments')}
             </CardTitle>
             <Button asChild variant="outline" size="sm">
-              <Link href="/my-payments">Voir tous les paiements</Link>
+              <Link href="/my-payments">{t('dashboard.installer.viewAllPayments')}</Link>
             </Button>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-4 rounded-lg bg-white/50">
-                <p className="text-sm text-muted-foreground">Total reçu</p>
+                <p className="text-sm text-muted-foreground">{t('dashboard.installer.totalReceived')}</p>
                 <p className="text-2xl font-bold text-green-700">{formatCurrency(totalReceived)}</p>
                 <p className="text-xs text-green-600 mt-1">
-                  {installerBillingDossiers.filter(d => d.billingStatus === 'paid').length} dossier(s) payé(s)
+                  {t('dashboard.installer.casesPaid', { count: installerBillingDossiers.filter(d => d.billingStatus === 'paid').length })}
                 </p>
               </div>
               <div className="p-4 rounded-lg bg-white/50">
-                <p className="text-sm text-muted-foreground">En attente</p>
+                <p className="text-sm text-muted-foreground">{t('dashboard.installer.pendingPayments')}</p>
                 <p className="text-2xl font-bold text-yellow-700">{formatCurrency(totalPending)}</p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  {installerBillingDossiers.filter(d => d.billingStatus === 'approved' || d.billingStatus === 'billed').length} dossier(s) en cours
+                  {t('dashboard.installer.casesInProgress', { count: installerBillingDossiers.filter(d => d.billingStatus === 'approved' || d.billingStatus === 'billed').length })}
                 </p>
               </div>
             </div>
@@ -236,7 +238,7 @@ export default function InstallerDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              Notifications
+              {t('dashboard.installer.notifications')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -274,7 +276,7 @@ export default function InstallerDashboard() {
                   )}
                   <div className="flex-1">
                     <p className="text-sm">{notif.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Il y a {notif.time}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('dashboard.installer.ago', { time: notif.time })}</p>
                   </div>
                 </div>
               ))}

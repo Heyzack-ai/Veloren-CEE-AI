@@ -10,10 +10,12 @@ import { Plus, Edit, Copy, Upload } from 'lucide-react';
 import { mockValidationRules } from '@/lib/mock-data/validation-rules';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslation } from '@/lib/i18n';
 
 type ValidationRule = typeof mockValidationRules[0];
 
 export default function ValidationRulesPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -24,37 +26,37 @@ export default function ValidationRulesPage() {
   const filters: Filter[] = [
     {
       id: 'search',
-      label: 'Recherche',
+      label: t('rules.filter.search'),
       type: 'search',
-      placeholder: 'Rechercher une règle...',
+      placeholder: t('rules.filter.searchPlaceholder'),
       value: searchQuery,
       onChange: setSearchQuery,
     },
     {
       id: 'severity',
-      label: 'Sévérité',
+      label: t('rules.filter.severity'),
       type: 'select',
-      placeholder: 'Toutes les sévérités',
+      placeholder: t('rules.filter.severityAll'),
       value: severityFilter,
       onChange: setSeverityFilter,
       options: [
-        { label: 'Toutes les sévérités', value: '' },
-        { label: 'Erreur', value: 'error' },
-        { label: 'Avertissement', value: 'warning' },
-        { label: 'Info', value: 'info' },
+        { label: t('rules.filter.severityAll'), value: '' },
+        { label: t('rules.severity.error'), value: 'error' },
+        { label: t('rules.severity.warning'), value: 'warning' },
+        { label: t('rules.severity.info'), value: 'info' },
       ],
     },
     {
       id: 'status',
-      label: 'Statut',
+      label: t('common.status'),
       type: 'select',
-      placeholder: 'Tous les statuts',
+      placeholder: t('rules.filter.statusAll'),
       value: statusFilter,
       onChange: setStatusFilter,
       options: [
-        { label: 'Tous les statuts', value: '' },
-        { label: 'Actif', value: 'active' },
-        { label: 'Inactif', value: 'inactive' },
+        { label: t('rules.filter.statusAll'), value: '' },
+        { label: t('common.active'), value: 'active' },
+        { label: t('common.inactive'), value: 'inactive' },
       ],
     },
   ];
@@ -80,44 +82,39 @@ export default function ValidationRulesPage() {
   const columns: Column<ValidationRule>[] = [
     {
       key: 'code',
-      header: 'Code',
+      header: t('rules.table.code'),
       cell: (rule) => (
         <div className="font-medium">{rule.code}</div>
       ),
     },
     {
       key: 'name',
-      header: 'Nom',
+      header: t('rules.table.name'),
       cell: (rule) => <span>{rule.name}</span>,
     },
     {
       key: 'type',
-      header: 'Type',
+      header: t('rules.table.type'),
       cell: (rule) => {
-        const typeLabels = {
-          document: 'Document',
-          cross_document: 'Inter-documents',
-          global: 'Global',
-        };
-        return <Badge variant="outline">{typeLabels[rule.type]}</Badge>;
+        return <Badge variant="outline">{t(`rules.type.${rule.type}`)}</Badge>;
       },
     },
     {
       key: 'severity',
-      header: 'Sévérité',
+      header: t('rules.table.severity'),
       cell: (rule) => {
         const severityConfig = {
-          error: { label: 'Erreur', className: 'bg-red-600' },
-          warning: { label: 'Avertissement', className: 'bg-yellow-600' },
-          info: { label: 'Info', className: 'bg-blue-600' },
+          error: { className: 'bg-red-600' },
+          warning: { className: 'bg-yellow-600' },
+          info: { className: 'bg-blue-600' },
         };
         const config = severityConfig[rule.severity];
-        return <Badge className={config.className}>{config.label}</Badge>;
+        return <Badge className={config.className}>{t(`rules.severity.${rule.severity}`)}</Badge>;
       },
     },
     {
       key: 'appliesTo',
-      header: 'S\'applique à',
+      header: t('rules.table.appliesTo'),
       cell: (rule) => (
         <div className="flex flex-wrap gap-1">
           {rule.appliesTo.documentTypes?.slice(0, 2).map((docType) => (
@@ -135,24 +132,24 @@ export default function ValidationRulesPage() {
     },
     {
       key: 'stats',
-      header: 'Statistiques',
+      header: t('rules.table.statistics'),
       cell: (rule) => (
         <div className="text-xs text-muted-foreground">
-          <div>{rule.passedCount}/{rule.timesEvaluated} réussis</div>
-          <div className="text-red-600">{rule.overrideCount} contournements</div>
+          <div>{t('rules.stats.passed', { passed: rule.passedCount, total: rule.timesEvaluated })}</div>
+          <div className="text-red-600">{t('rules.stats.overrides', { count: rule.overrideCount })}</div>
         </div>
       ),
     },
     {
       key: 'status',
-      header: 'Actif',
+      header: t('rules.table.active'),
       cell: (rule) => (
         <Switch checked={rule.isActive} />
       ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: t('rules.table.actions'),
       cell: (rule) => (
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" asChild>
@@ -172,20 +169,23 @@ export default function ValidationRulesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Règles de validation</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('rules.title')}</h1>
           <p className="text-muted-foreground">
-            {filteredRules.length} règle{filteredRules.length > 1 ? 's' : ''} configurée{filteredRules.length > 1 ? 's' : ''}
+            {t('rules.subtitle', {
+              count: filteredRules.length,
+              plural: filteredRules.length > 1 ? 's' : ''
+            })}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
             <Upload className="h-4 w-4 mr-2" />
-            Importer des règles
+            {t('rules.import')}
           </Button>
           <Button asChild>
             <Link href="/config/rules/new">
               <Plus className="h-4 w-4 mr-2" />
-              Créer une règle
+              {t('rules.create')}
             </Link>
           </Button>
         </div>
@@ -194,16 +194,16 @@ export default function ValidationRulesPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">
-            Toutes les règles ({mockValidationRules.length})
+            {t('rules.tabs.all', { count: mockValidationRules.length })}
           </TabsTrigger>
           <TabsTrigger value="document">
-            Règles document ({mockValidationRules.filter(r => r.type === 'document').length})
+            {t('rules.tabs.document', { count: mockValidationRules.filter(r => r.type === 'document').length })}
           </TabsTrigger>
           <TabsTrigger value="cross_document">
-            Règles inter-documents ({mockValidationRules.filter(r => r.type === 'cross_document').length})
+            {t('rules.tabs.crossDocument', { count: mockValidationRules.filter(r => r.type === 'cross_document').length })}
           </TabsTrigger>
           <TabsTrigger value="global">
-            Règles globales ({mockValidationRules.filter(r => r.type === 'global').length})
+            {t('rules.tabs.global', { count: mockValidationRules.filter(r => r.type === 'global').length })}
           </TabsTrigger>
         </TabsList>
 

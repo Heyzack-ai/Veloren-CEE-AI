@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, HelpCircle, Search, PanelLeft } from 'lucide-react';
+import { Bell, HelpCircle, Search, PanelLeft, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
+import { useLanguage, useTranslation } from '@/lib/i18n';
+import type { SupportedLanguage } from '@/lib/i18n';
 
 type AppHeaderProps = {
   isSidebarCollapsed?: boolean;
@@ -23,6 +25,8 @@ type AppHeaderProps = {
 
 export function AppHeader({ isSidebarCollapsed, onToggleSidebar }: AppHeaderProps) {
   const { user, logout } = useAuth();
+  const { lang, setLang } = useLanguage();
+  const { t } = useTranslation();
 
   const getInitials = (name: string) => {
     return name
@@ -33,12 +37,12 @@ export function AppHeader({ isSidebarCollapsed, onToggleSidebar }: AppHeaderProp
   };
 
   const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = {
-      administrator: 'Administrateur',
-      validator: 'Validateur',
-      installer: 'Installateur',
-    };
-    return labels[role] || role;
+    const key = `header.user.role.${role}`;
+    return t(key, undefined, role);
+  };
+
+  const handleLanguageChange = (nextLang: SupportedLanguage) => {
+    setLang(nextLang);
   };
 
   return (
@@ -51,7 +55,7 @@ export function AppHeader({ isSidebarCollapsed, onToggleSidebar }: AppHeaderProp
             size="icon"
             className="mr-1"
             onClick={onToggleSidebar}
-            aria-label={isSidebarCollapsed ? 'Déplier le menu' : 'Replier le menu'}
+            aria-label={t(isSidebarCollapsed ? 'header.toggle.expand' : 'header.toggle.collapse')}
           >
             <PanelLeft className="h-5 w-5" />
           </Button>
@@ -63,7 +67,7 @@ export function AppHeader({ isSidebarCollapsed, onToggleSidebar }: AppHeaderProp
             <span className="text-primary-foreground font-bold text-lg">V</span>
           </div>
           <span className="font-heading font-semibold text-lg hidden sm:inline-block">
-            CEE Validation
+            {t('header.brand')}
           </span>
         </Link>
 
@@ -72,7 +76,7 @@ export function AppHeader({ isSidebarCollapsed, onToggleSidebar }: AppHeaderProp
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher dossiers, installateurs... (⌘K)"
+              placeholder={t('header.search.placeholder')}
               className="pl-9"
             />
           </div>
@@ -81,15 +85,46 @@ export function AppHeader({ isSidebarCollapsed, onToggleSidebar }: AppHeaderProp
         {/* Right Side Actions */}
         <div className="ml-auto flex items-center gap-2">
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative"
+            aria-label={t('header.notifications')}
+          >
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
           </Button>
 
           {/* Help */}
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" aria-label={t('header.help')}>
             <HelpCircle className="h-5 w-5" />
           </Button>
+
+          {/* Language Switcher */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t('header.language.switch')}
+              >
+                <Languages className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuLabel>{t('header.language.switch')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {(['fr', 'en'] as SupportedLanguage[]).map(code => (
+                <DropdownMenuItem
+                  key={code}
+                  onClick={() => handleLanguageChange(code)}
+                  className={code === lang ? 'font-semibold' : ''}
+                >
+                  {code === 'fr' ? t('header.language.fr') : t('header.language.en')}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* User Menu */}
           <DropdownMenu>
@@ -115,14 +150,14 @@ export function AppHeader({ isSidebarCollapsed, onToggleSidebar }: AppHeaderProp
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/settings/profile">Profil</Link>
+                <Link href="/settings/profile">{t('header.user.profile')}</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/settings">Paramètres</Link>
+                <Link href="/settings">{t('header.user.settings')}</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-red-600">
-                Déconnexion
+                {t('header.user.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
