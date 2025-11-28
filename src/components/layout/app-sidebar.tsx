@@ -54,6 +54,7 @@ const adminNavItems: NavItem[] = [
     icon: Cog,
     children: [
       { title: 'Processus', href: '/config/processes', icon: Cog },
+      { title: 'Types de documents', href: '/config/document-types', icon: FileText },
       { title: 'Règles de validation', href: '/config/rules', icon: CheckSquare },
       { title: 'Schémas de champs', href: '/config/schemas', icon: FileText },
     ],

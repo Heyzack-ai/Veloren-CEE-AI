@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -17,8 +18,9 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockValidationRules } from '@/lib/mock-data/validation-rules';
-import { mockDocumentTypes } from '@/lib/mock-data/document-types';
-import { ArrowLeft, Save, Play, Plus, Trash2 } from 'lucide-react';
+import { mockDocumentTypes, FieldSchema } from '@/lib/mock-data/document-types';
+import { mockProcesses } from '@/lib/mock-data/processes';
+import { ArrowLeft, Save, Play, Plus, Trash2, FileText, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -51,11 +53,77 @@ export default function RuleBuilderPage({ params }: PageProps) {
     rule?.appliesTo.documentTypes || []
   );
 
+  const [selectedProcessId, setSelectedProcessId] = useState<string>(
+    rule?.appliesTo.processes?.[0] || 'all'
+  );
+
   const [builderMode, setBuilderMode] = useState<'visual' | 'expression'>('visual');
 
   const [conditions, setConditions] = useState([
-    { field: '', operator: 'equals', value: '' }
+    { field: '', operator: 'equals', value: '', valueType: 'static' as 'static' | 'field' }
   ]);
+
+  const [expandedDocTypes, setExpandedDocTypes] = useState<Set<string>>(new Set());
+
+  // Get document types available for the selected process
+  const availableDocumentTypes = useMemo(() => {
+    if (selectedProcessId === 'all') {
+      return mockDocumentTypes;
+    }
+    const process = mockProcesses.find(p => p.id === selectedProcessId);
+    if (!process) return mockDocumentTypes;
+    
+    const processDocTypeNames = process.requiredDocuments.map(d => d.documentType);
+    return mockDocumentTypes.filter(dt => 
+      processDocTypeNames.includes(dt.name) || processDocTypeNames.includes(dt.code)
+    );
+  }, [selectedProcessId]);
+
+  // Get all fields from selected document types
+  const availableFields = useMemo(() => {
+    const fields: Array<{ docType: string; docCode: string; field: FieldSchema; fullPath: string }> = [];
+    
+    selectedDocTypes.forEach(docTypeCode => {
+      const docType = mockDocumentTypes.find(dt => dt.code === docTypeCode);
+      if (docType && docType.fieldSchema) {
+        docType.fieldSchema.forEach(field => {
+          fields.push({
+            docType: docType.name,
+            docCode: docType.code.toLowerCase(),
+            field,
+            fullPath: `${docType.code.toLowerCase()}.${field.internalName}`
+          });
+        });
+      }
+    });
+    
+    return fields;
+  }, [selectedDocTypes]);
+
+  // Group available fields by document type
+  const fieldsByDocType = useMemo(() => {
+    const grouped: Record<string, typeof availableFields> = {};
+    availableFields.forEach(f => {
+      if (!grouped[f.docType]) grouped[f.docType] = [];
+      grouped[f.docType].push(f);
+    });
+    return grouped;
+  }, [availableFields]);
+
+  const toggleDocTypeExpanded = (docType: string) => {
+    const newExpanded = new Set(expandedDocTypes);
+    if (newExpanded.has(docType)) {
+      newExpanded.delete(docType);
+    } else {
+      newExpanded.add(docType);
+    }
+    setExpandedDocTypes(newExpanded);
+  };
+
+  const insertFieldPath = (fullPath: string) => {
+    // Copy to clipboard for easy use
+    navigator.clipboard.writeText(fullPath);
+  };
 
   return (
     <div className="space-y-6">
@@ -196,19 +264,54 @@ export default function RuleBuilderPage({ params }: PageProps) {
             <CardHeader>
               <CardTitle>Portée de la règle</CardTitle>
               <CardDescription>
-                Définir à quels documents cette règle s'applique
+                Définir à quels processus et documents cette règle s'applique
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="processes">S'applique au processus</Label>
+                <Select 
+                  value={selectedProcessId} 
+                  onValueChange={(value) => {
+                    setSelectedProcessId(value);
+                    // Reset document types when process changes
+                    setSelectedDocTypes([]);
+                  }}
+                >
+                  <SelectTrigger id="processes">
+                    <SelectValue placeholder="Sélectionner un processus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les processus</SelectItem>
+                    {mockProcesses.map((process) => (
+                      <SelectItem key={process.id} value={process.id}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{process.code}</span>
+                          <span className="text-muted-foreground">- {process.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedProcessId !== 'all' && (
+                  <p className="text-xs text-muted-foreground">
+                    {mockProcesses.find(p => p.id === selectedProcessId)?.requiredDocuments.length || 0} types de documents disponibles pour ce processus
+                  </p>
+                )}
+              </div>
+
               {formData.type !== 'global' && (
                 <div className="space-y-2">
                   <Label>Types de documents</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Sélectionnez les types de documents concernés par cette règle
+                  </p>
                   <div className="flex flex-wrap gap-2">
-                    {mockDocumentTypes.map((docType) => (
+                    {availableDocumentTypes.map((docType) => (
                       <Badge
                         key={docType.id}
                         variant={selectedDocTypes.includes(docType.code) ? 'default' : 'outline'}
-                        className="cursor-pointer"
+                        className="cursor-pointer transition-colors"
                         onClick={() => {
                           setSelectedDocTypes(prev =>
                             prev.includes(docType.code)
@@ -218,24 +321,19 @@ export default function RuleBuilderPage({ params }: PageProps) {
                         }}
                       >
                         {docType.name}
+                        {selectedDocTypes.includes(docType.code) && (
+                          <span className="ml-1 text-xs">({docType.fieldSchema.length} champs)</span>
+                        )}
                       </Badge>
                     ))}
                   </div>
+                  {selectedDocTypes.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      ⚠ Sélectionnez au moins un type de document pour accéder aux champs disponibles
+                    </p>
+                  )}
                 </div>
               )}
-
-              <div className="space-y-2">
-                <Label htmlFor="processes">S'applique aux processus</Label>
-                <Select defaultValue="all">
-                  <SelectTrigger id="processes">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les processus</SelectItem>
-                    <SelectItem value="specific">Processus spécifiques...</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </CardContent>
           </Card>
 
@@ -259,21 +357,50 @@ export default function RuleBuilderPage({ params }: PageProps) {
             <CardContent>
               {builderMode === 'visual' ? (
                 <div className="space-y-3">
+                  {availableFields.length === 0 && (
+                    <div className="text-center py-6 text-muted-foreground border rounded-lg bg-muted/30">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Sélectionnez des types de documents pour accéder aux champs</p>
+                    </div>
+                  )}
                   {conditions.map((condition, index) => (
                     <div key={index} className="flex gap-2 items-start p-3 border rounded-lg">
-                      <div className="flex-1 grid md:grid-cols-3 gap-2">
-                        <Select value={condition.field}>
+                      <div className="flex-1 grid md:grid-cols-4 gap-2">
+                        <Select 
+                          value={condition.field}
+                          onValueChange={(value) => {
+                            const newConditions = [...conditions];
+                            newConditions[index] = { ...newConditions[index], field: value };
+                            setConditions(newConditions);
+                          }}
+                        >
                           <SelectTrigger>
-                            <SelectValue placeholder="Champ" />
+                            <SelectValue placeholder="Champ source" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="devis.prime_cee">devis.prime_cee</SelectItem>
-                            <SelectItem value="facture.prime_cee">facture.prime_cee</SelectItem>
-                            <SelectItem value="cdc.prime_montant">cdc.prime_montant</SelectItem>
+                            {Object.entries(fieldsByDocType).map(([docType, fields]) => (
+                              <div key={docType}>
+                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                                  {docType}
+                                </div>
+                                {fields.map((f) => (
+                                  <SelectItem key={f.fullPath} value={f.fullPath}>
+                                    {f.field.displayName}
+                                  </SelectItem>
+                                ))}
+                              </div>
+                            ))}
                           </SelectContent>
                         </Select>
 
-                        <Select value={condition.operator}>
+                        <Select 
+                          value={condition.operator}
+                          onValueChange={(value) => {
+                            const newConditions = [...conditions];
+                            newConditions[index] = { ...newConditions[index], operator: value };
+                            setConditions(newConditions);
+                          }}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Opérateur" />
                           </SelectTrigger>
@@ -282,16 +409,77 @@ export default function RuleBuilderPage({ params }: PageProps) {
                             <SelectItem value="not_equals">différent de</SelectItem>
                             <SelectItem value="greater_than">supérieur à</SelectItem>
                             <SelectItem value="less_than">inférieur à</SelectItem>
+                            <SelectItem value="greater_or_equal">supérieur ou égal à</SelectItem>
+                            <SelectItem value="less_or_equal">inférieur ou égal à</SelectItem>
                             <SelectItem value="contains">contient</SelectItem>
+                            <SelectItem value="starts_with">commence par</SelectItem>
+                            <SelectItem value="ends_with">se termine par</SelectItem>
+                            <SelectItem value="is_empty">est vide</SelectItem>
+                            <SelectItem value="is_not_empty">n'est pas vide</SelectItem>
                           </SelectContent>
                         </Select>
 
-                        <Input placeholder="Valeur" value={condition.value} />
+                        <Select 
+                          value={condition.valueType}
+                          onValueChange={(value: 'static' | 'field') => {
+                            const newConditions = [...conditions];
+                            newConditions[index] = { ...newConditions[index], valueType: value, value: '' };
+                            setConditions(newConditions);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="static">Valeur fixe</SelectItem>
+                            <SelectItem value="field">Autre champ</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        {condition.valueType === 'field' ? (
+                          <Select 
+                            value={condition.value}
+                            onValueChange={(value) => {
+                              const newConditions = [...conditions];
+                              newConditions[index] = { ...newConditions[index], value };
+                              setConditions(newConditions);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Champ cible" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(fieldsByDocType).map(([docType, fields]) => (
+                                <div key={docType}>
+                                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                                    {docType}
+                                  </div>
+                                  {fields.map((f) => (
+                                    <SelectItem key={f.fullPath} value={f.fullPath}>
+                                      {f.field.displayName}
+                                    </SelectItem>
+                                  ))}
+                                </div>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input 
+                            placeholder="Valeur" 
+                            value={condition.value}
+                            onChange={(e) => {
+                              const newConditions = [...conditions];
+                              newConditions[index] = { ...newConditions[index], value: e.target.value };
+                              setConditions(newConditions);
+                            }}
+                          />
+                        )}
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setConditions(conditions.filter((_, i) => i !== index))}
+                        disabled={conditions.length === 1}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -301,7 +489,8 @@ export default function RuleBuilderPage({ params }: PageProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setConditions([...conditions, { field: '', operator: 'equals', value: '' }])}
+                    onClick={() => setConditions([...conditions, { field: '', operator: 'equals', value: '', valueType: 'static' }])}
+                    disabled={availableFields.length === 0}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Ajouter une condition
@@ -398,18 +587,65 @@ export default function RuleBuilderPage({ params }: PageProps) {
           <Card>
             <CardHeader>
               <CardTitle>Champs disponibles</CardTitle>
+              <CardDescription>
+                Cliquez pour copier le chemin du champ
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 text-sm">
-                {selectedDocTypes.map((docType) => (
-                  <div key={docType}>
-                    <p className="font-medium">{docType}</p>
-                    <div className="pl-2 text-muted-foreground space-y-1">
-                      <p>• {docType.toLowerCase()}.field_name</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {selectedDocTypes.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Sélectionnez des types de documents pour voir les champs disponibles
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {Object.entries(fieldsByDocType).map(([docType, fields]) => {
+                    const isExpanded = expandedDocTypes.has(docType);
+                    return (
+                      <div key={docType} className="border rounded-lg overflow-hidden">
+                        <button
+                          className="w-full flex items-center justify-between p-2 hover:bg-muted/50 transition-colors"
+                          onClick={() => toggleDocTypeExpanded(docType)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-sm">{docType}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {fields.length}
+                            </Badge>
+                          </div>
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+                        {isExpanded && (
+                          <div className="border-t bg-muted/20">
+                            {fields.map((f) => (
+                              <div
+                                key={f.fullPath}
+                                className="flex items-center justify-between px-3 py-1.5 hover:bg-muted/50 cursor-pointer group"
+                                onClick={() => insertFieldPath(f.fullPath)}
+                                title={`Cliquer pour copier: ${f.fullPath}`}
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-medium truncate">
+                                    {f.field.displayName}
+                                  </p>
+                                  <code className="text-xs text-muted-foreground">
+                                    {f.fullPath}
+                                  </code>
+                                </div>
+                                <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
