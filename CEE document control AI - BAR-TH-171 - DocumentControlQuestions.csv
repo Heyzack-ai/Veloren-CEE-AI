@@ -1,0 +1,130 @@
+Document,Control Questions,Process,Questions,,More questions,Answers
+Quote,"Does the quote contain the professional's complete information (company name, SIRET, address, legal notices, ten-year insurance)?",Vision AI will check,,,"Can user modify (add/change) some information in the documents?
+if the user modify the values in the document do we need to create a new PDF file with the changes applied ?
+
+Do we need to extract the information or only validate based on the questions?
+","1. Can the user modify (add/change) information in the documents?
+➤ Answer: NO. The controller (user) cannot modify any values inside the documents themselves. The scanned documents you receive are final, signed documents (by the client and the installer) and must not be altered.
+2. If a value is incorrect, do we need to create a new PDF?
+➤ Answer: NO. If the controller sees that the AI extracted a wrong value, the controller only corrects the extracted fields in the interface, not the documents. There is no PDF regeneration. If the dossier is refused, the installer must correct their own documents and resubmit new updated PDFs.
+3. Do we need to extract information or only validate based on questions?
+➤ Answer: The AI must extract all information from the documents. The workflow is:
+IA reads and extracts all fields from the provided documents.
+Controller reviews these extracted values.
+If the AI made a mistake, the controller corrects the field (in the form/UI).
+The system then runs the rules/validations based on these corrected fields.
+The controller accepts or refuses the dossier.
+If refused, the installer must update the real documents and resubmit them."
+Quote,Are the beneficiary's first and last names present and consistent with supporting documents?,OCR needs to extract the names and Vision Model will check compare it,,,,
+Quote,Is the full address of the works present and consistent with supporting documents?,Vision AI will check,,,,
+Quote,Are the beneficiary's email and phone number indicated and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Quote,Is the pre-visit date mentioned?,Vision AI will check,,,,
+Quote,"Is the subcontractor declaration (name, first name, company name, SIRET, RGE...) present?",Vision AI will check,,,,
+Quote,Is the AH (Sworn Statement) operation code indicated?,Vision AI will check,,,,
+Quote,Is the description of the EEC (Energy Savings Certificates) operation present?,Vision AI will check,,,,
+Quote,"Are the general characteristics of the material used mentioned (ref, brand, thickness...)?",Vision AI will check,,,,
+Quote,Is the waste management mention present?,Vision AI will check,,,,
+Quote,Is the sentence related to the premium present?,Vision AI will check,,,,
+Quote,Is the EEC premium correct?,,How we get the Correct premium..? is it fixied ...?,,,
+Quote,Is the EEC premium identical to the one mentioned on the contribution framework?,,How we get the Correct Contribution Framework...?,,,
+Quote,Has the EEC premium been deducted from the amount including tax (TTC)?,Vision AI will check,,,,
+Quote,"Is the mention ""Bon pour accord"" (Good for agreement) present?",Vision AI will check,,,,
+Quote,Is the quote signature date present and legible?,Vision AI will check,,,,
+Quote,Is the signature present and legible?,Vision AI will check,,,,
+Quote,"Are the signatures on the quote, Part B, and Part R1 identical on all documents?",OCR needs to extract the names and Vision Model will check compare it,,,,
+Quote,Is the pen ink color identical?,"Vision AI will check
+",,,,
+Quote,Are all pages present and numbered?,Vision AI will check,,,,
+Quote,Is the premium consistent with the beneficiary's precariousness status?,,,,,
+Quote,Is waste management clearly mentioned?,Vision AI will check,,,,
+Quote,Was no down payment received before the quote was established?,,Is this mentioned in the quote...? ,YES IT SHOULD BE MENTIONED IN THE QUOTE,,
+Quote,Is the RGE valid at the date of engagement of the operation?,,What is the rule to check is RDE valid or not..?,Reconnu Garant de l'Environnement (API endpoint to check the RGE)https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2 ,https://www.data.gouv.fr/dataservices/api-professionnels-rge/,
+Quote,Is the removal of a gas or oil boiler indicated?,Vision AI will check,,,,
+Quote,Is the installer's mediator mentioned?,Vision AI will check,,,,
+Contribution Framework,Are the mandatory's and obligated party's logos present?,,the logos are fixed or will change every time,Each entity has its own fixed logo,,
+Contribution Framework,Is the contribution framework format correct (Coup de pouce/Boost or non-Boost)?,,How we get the correct formate and it is fixed or will change every time...?,its mentioned on the Contribution Framework if its a coup de pouce .,,
+Contribution Framework,"Has the option ""a premium of amount XXX Euros"" been checked with the entered EEC amount?",,Where we get the Entered EEC Amount of premimume,,,
+Contribution Framework,Is the premium amount identical to the one mentioned on the quote?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Contribution Framework,Is the EEC operation identical on the quote and the invoice?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Contribution Framework,"Is the beneficiary's information complete (Last name, first name, address, postal code, city)?","Vision AI will check
+",,,,
+Contribution Framework,Is the proposal date present and prior to or equal to the quote signature date?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Contribution Framework,"Is the mention ""Bon pour accord"" (Good for agreement) present?","Vision AI will check
+",,,,
+Contribution Framework,Is the signature date present and prior to or equal to the quote signature date?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Contribution Framework,Is the signature present and legible?,,What is the rule for deciding it is legible,"detect only if the signature is present , then Human validation",,
+Contribution Framework,Are the signature and commercial stamp legible?,,What is the rule for deciding it is legible,"detect only if the signature is present , then Human validation",,
+Contribution Framework,Do the mandatory mentions respect the regulatory formalism?,,What are the rules of regulatory formalism..?,Need a dataset of all the CDC of valoren,,
+Contribution Framework,Is the signature consistent with that of the quote?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Invoice,Is the heated surface area consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Invoice,"Does the invoice contain the professional's complete information (company name, address, legal notices)?",Vision AI will check,,,,
+Invoice,Is the invoice date subsequent to the quote date?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Invoice,Are the beneficiary's first and last names present and consistent with supporting documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Invoice,Is the full address of the works present and consistent with supporting documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Invoice,Are the beneficiary's email and phone number indicated and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Invoice,Does the invoice refer to the signed quote (quote number + date)?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Invoice,Is the date of the prior visit present?,Vision AI will check,,,,
+Invoice,"Is the subcontractor declaration (name, first name, company name, SIRET, RGE...) present?",Vision AI will check,,,,
+Invoice,Is the AH (Sworn Statement) operation code indicated?,Vision AI will check,,,,
+Invoice,Is the description of the EEC operation present?,Vision AI will check,,,,
+Invoice,"Are the precise characteristics of the material used mentioned (ref, brand, thickness...)?",Vision AI will check,,,,
+Invoice,Is the waste mention present?,Vision AI will check,,,,
+Invoice,Is the mandatory sentence related to the premium present?,,What is the rule to check this..? like to decide it is correctly related,just check if the detailed of obligated and mandated party exist,,
+Invoice,Is the EEC premium correct?,,"How we get the Correct premium..? is it fixied ...?
+ or will change for each ",,,
+Invoice,Is the EEC premium identical to the one mentioned on the contribution framework?,,How we get the Correct Contribution Framework...?,,,
+Invoice,Are all pages present and numbered?,Vision AI will check,,,,
+Invoice,Has the EEC premium been deducted from the amount including tax?,Vision AI will check,Any rule for this..?,,,
+Invoice,Is the removal of a gas or oil boiler indicated?,Vision AI will check,,,,
+Invoice,Is the installer's mediator mentioned?,Vision AI will check,,,,
+Sworn Statement,Is the version of the sheet compliant with the date of engagement of the quote?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Is the AH operation code indicated?,Vision AI will check,,,,
+Sworn Statement Part A,"Are the dates in Part A identical to the dates in the documents (quote, invoice, technical visit)?",OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Is the invoice reference declared on the AH identical to the invoice reference?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Is the address of the works declared on the AH identical to that mentioned on all documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Does the residential building exist for more than 2 years at the date of engagement of the operation?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Is the type of housing (House or Apartment) correctly checked and identical to other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,"Is the mention ""Heating"" or ""Domestic Hot Water"" consistent with the installed equipment?",OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Is the type of installation (medium/high temperature or low temperature) consistent with the installation?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Are the surface area and declared elements consistent with the invoice?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Are the brand and model of the equipment present and identical to the invoice?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part A,Is the presence of a subcontractor indicated?,Vision AI will check,,,,
+Sworn Statement Part B,Are the beneficiary's first and last names present and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part B,Are the company name and SIREN number of the beneficiary mentioned (if legal entity)?,Vision AI will check,,,,
+Sworn Statement Part B,Is the beneficiary's full address present and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part B,Are the beneficiary's email and phone number indicated and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part B,"Is the box ""I am: the sole owner (final) or..."" checked?",Vision AI will check,,,,
+Sworn Statement Part B,"Is the box ""I am the project owner..."" checked?",Vision AI will check,,,,
+Sworn Statement Part B,"Are the place, date, and signature legible?",Vision AI will check,,,,
+Sworn Statement Part B,Is the signature date of Part B subsequent to or equal to the invoice date?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part B,Is the signature of Part B identical to those of the quote and Part R1?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part C,Are the signatory's first and last names present?,Vision AI will check,,,,
+Sworn Statement Part C,Are the professional's company name and SIRET number mentioned?,Vision AI will check,,,,
+Sworn Statement Part C,Is the professional's full address present and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part C,Are the professional's email and phone number indicated and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part C,"Is the box ""having implemented; or"" checked?",Vision AI will check,,,,
+Sworn Statement Part C,"Are the place, date, and signature legible?",Vision AI will check,,,,
+Sworn Statement Part C,Is the signature date of Part C subsequent to or equal to the invoice date?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part C,Is the commercial stamp present?,Vision AI will check,,,,
+Sworn Statement Part R1,Is there a Part R1 (Standard file: No Part R1)?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Does the file contain a Part R1 (Standard file: No Part R1)?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Is the tax notice present?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Are the beneficiary's first and last names present and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Is the beneficiary's full address present and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Are the beneficiary's email and phone number indicated and consistent with other documents?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Is the choice of the income table compliant with the tax notice (taxable income)?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Is the number of people declared on the AH identical to that mentioned on the tax notice?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Is the number of tax households equal to 1?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,"Are the place, date, and signature legible?",Vision AI will check,,,,
+Sworn Statement Part R1,Is the signature date of Part R1 subsequent to or equal to the invoice date?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Are the signatures of Part R1 identical to those of the quote and Part B?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Sworn Statement Part R1,Is the page numbering of the AH correct?,Vision AI will check,,,,
+Photo Before,Is the document present and consistent with the brand and type of equipment on the invoice?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Photo After,Is the installed equipment consistent with the invoice?,OCR needs to extract the details and Vision Model will check compare it,,,,
+Photo After,Are professional standards (règles de l'art) respected?,,What is the Rules for checking the standards..?,Human validation,,
+Sizing Note,"Is the information regarding equipment and beneficiary (heated surface, name, first name, etc.) consistent?",OCR needs to extract the details and Vision Model will check compare it,,,,
+Sizing Note,Has the coverage rate been verified with the control Excel file?,,is the rate is fixed or will differ for each documents..? and what is the excel file..?,,,
+Tax Notice,Is the tax notice complete and does it correspond to maximum N-2 revenues?,,,,,
+Tax Notice,"In the absence of an N-1 tax notice at the site address, is a proof of residence or property tax provided?",,,,,
+Notarial Deed,"In the case of a locality (lieu-dit) or incomplete address, is the information specified?",,,,,
+Geoportal,Has the cadastral reference been verified (mandatory for localities or incomplete addresses)?,,,,,
