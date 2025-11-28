@@ -58,6 +58,7 @@ import {
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { useTranslation } from '@/lib/i18n';
+import { JSONSchemaViewer } from '@/components/json-schema-viewer';
 
 type PageProps = {
   params: { id: string };
@@ -126,8 +127,9 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
   const [showAddFieldDialog, setShowAddFieldDialog] = useState(false);
   const [editingField, setEditingField] = useState<FieldSchema | null>(null);
   const [expandedFields, setExpandedFields] = useState<Set<string>>(new Set());
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [showSchemaViewer, setShowSchemaViewer] = useState(false);
 
-  // New field form state
   const [newField, setNewField] = useState<Omit<FieldSchema, 'id'>>(defaultFieldSchema);
   const [hintsInput, setHintsInput] = useState('');
   const [classificationHintsInput, setClassificationHintsInput] = useState(
@@ -641,33 +643,53 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
 
         {/* Extraction Settings Tab */}
         <TabsContent value="extraction" className="space-y-4">
+          {/* OCR Configuration */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('docTypeWizard.extraction.title')}</CardTitle>
+              <CardTitle>OCR Model Configuration</CardTitle>
               <CardDescription>
-                {t('docTypeWizard.extraction.description')}
+                Configure extraction settings for Mistral OCR, Gemini 2.5 Pro, and other OCR models
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="defaultConfidence">{t('docTypeWizard.extraction.defaultConfidence')}</Label>
-                <Input
-                  id="defaultConfidence"
-                  type="number"
-                  min="0"
-                  max="100"
-                  defaultValue="85"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('docTypeWizard.extraction.defaultConfidenceHint')}
-                </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="defaultConfidence">Default Confidence Threshold</Label>
+                  <Input
+                    id="defaultConfidence"
+                    type="number"
+                    min="0"
+                    max="100"
+                    defaultValue="85"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Minimum confidence score for field extraction (0-100)
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ocrModel">Primary OCR Model</Label>
+                  <Select defaultValue="mistral">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select OCR model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mistral">Mistral OCR</SelectItem>
+                      <SelectItem value="gemini">Gemini 2.5 Pro</SelectItem>
+                      <SelectItem value="azure">Azure Document Intelligence</SelectItem>
+                      <SelectItem value="google">Google Document AI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Primary OCR model to use for this document type
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>{t('docTypeWizard.extraction.strictOcr')}</Label>
+                  <Label>Enable Field Cross-Validation</Label>
                   <p className="text-sm text-muted-foreground">
-                    {t('docTypeWizard.extraction.strictOcrHint')}
+                    Validate extracted data across related fields for accuracy
                   </p>
                 </div>
                 <Switch defaultChecked />
@@ -675,16 +697,31 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="space-y-0.5">
-                  <Label>{t('docTypeWizard.extraction.multiPage')}</Label>
+                  <Label>Multi-Document Processing</Label>
                   <p className="text-sm text-muted-foreground">
-                    {t('docTypeWizard.extraction.multiPageHint')}
+                    Allow processing of multiple pages/documents in single request
                   </p>
                 </div>
                 <Switch defaultChecked />
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+
+          {/* JSON Schema Viewer */}
+          <JSONSchemaViewer
+            documentType={{
+              ...formData,
+              id: id, // Add the missing id property
+              fieldSchema,
+              ruleCount: 0,
+              createdAt: existingDocType?.createdAt || new Date(),
+              updatedAt: new Date(),
+            }}
+            isExpanded={showSchemaViewer}
+            onToggleExpanded={() => setShowSchemaViewer(!showSchemaViewer)}
+          />
+
+                  </TabsContent>
       </Tabs>
 
       {/* Add/Edit Field Dialog */}
@@ -776,21 +813,37 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="extractionHints">{t('docTypeWizard.fieldDialog.extractionHints')}</Label>
+              <Label htmlFor="extractionHints">
+                OCR Extraction Hints
+                <Badge variant="secondary" className="ml-2 text-xs">OCR Keywords</Badge>
+              </Label>
               <Input
                 id="extractionHints"
                 value={hintsInput}
                 onChange={(e) => setHintsInput(e.target.value)}
-                placeholder={t('docTypeWizard.fieldDialog.extractionHintsPlaceholder')}
+                placeholder="devis, n°, numéro, quote, reference"
               />
-              <p className="text-xs text-muted-foreground">
-                {t('docTypeWizard.fieldDialog.extractionHintsHint')}
-              </p>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  <strong>OCR Keywords:</strong> Add words that typically appear near this field in documents (comma-separated)
+                </p>
+                <div className="text-xs bg-blue-50 dark:bg-blue-950 p-2 rounded border-l-2 border-blue-200">
+                  <p className="font-medium text-blue-700 dark:text-blue-300">Examples:</p>
+                  <ul className="space-y-1 mt-1">
+                    <li>• Quote number: "devis", "n°", "quote", "ref"</li>
+                    <li>• Amount: "montant", "total", "€", "euro"</li>
+                    <li>• Date: "date", "le", "issued", "created"</li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="confidenceThreshold">{t('docTypeWizard.fieldDialog.confidence')}</Label>
+                <Label htmlFor="confidenceThreshold">
+                  OCR Confidence Threshold
+                  <Badge variant="secondary" className="ml-2 text-xs">Accuracy</Badge>
+                </Label>
                 <Input
                   id="confidenceThreshold"
                   type="number"
@@ -804,6 +857,14 @@ export default function DocumentTypeConfigPage({ params }: PageProps) {
                     })
                   }
                 />
+                <div className="text-xs bg-amber-50 dark:bg-amber-950 p-2 rounded border-l-2 border-amber-200">
+                  <p className="font-medium text-amber-700 dark:text-amber-300">OCR Recommendations:</p>
+                  <ul className="space-y-1 mt-1">
+                    <li>• <strong>Critical fields:</strong> 90-95% (amounts, dates, references)</li>
+                    <li>• <strong>Important fields:</strong> 85-90% (names, addresses)</li>
+                    <li>• <strong>Optional fields:</strong> 75-85% (descriptions, notes)</li>
+                  </ul>
+                </div>
               </div>
 
               <div className="flex items-end">
