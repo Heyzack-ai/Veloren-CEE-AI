@@ -139,7 +139,7 @@ This document outlines a comprehensive AI-powered system for automating CEE (Cer
 │              │                       │                       │             │
 │              ▼                       ▼                       ▼             │
 │  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────────┐ │
-│  │    POSTGRESQL      │ │   MINIO (S3)       │ │   MEILISEARCH          │ │
+│  │    POSTGRESQL      │ │   MINIO (S3)       │ │   TYPESENSE         │ │
 │  │  (Main Database)   │ │ (Document Storage) │ │  (Fast Search)         │ │
 │  │    Port 5432       │ │   Port 9000        │ │   Port 7700            │ │
 │  └────────────────────┘ └────────────────────┘ └────────────────────────┘ │
@@ -161,7 +161,7 @@ This document outlines a comprehensive AI-powered system for automating CEE (Cer
 | **Database** | PostgreSQL 16 | Main data store with full-text search |
 | **Cache/Queue** | Redis 7 | Caching, event queue, real-time pub/sub |
 | **Object Storage** | MinIO | S3-compatible document storage |
-| **Search** | MeiliSearch | Fast, typo-tolerant search |
+| **Search** | Typesense | Fast, typo-tolerant search |
 | **VLM/OCR** | Gemini 2.5 Flash/Pro | Document understanding, field extraction |
 | **Handwriting** | Gemini 2.5 (image input) | Signature and handwriting detection |
 | **Monitoring** | Signoz OR Sentry | Observability, error tracking, APM |
@@ -204,7 +204,7 @@ This document outlines a comprehensive AI-powered system for automating CEE (Cer
 │  │ services/gemini_service.py       Gemini 2.5 API wrapper            │   │
 │  │ services/rule_engine.py          Rule evaluation engine            │   │
 │  │ services/storage_service.py      MinIO operations                  │   │
-│  │ services/search_service.py       MeiliSearch operations            │   │
+│  │ services/search_service.py       Typesense operations            │   │
 │  │ services/notification_service.py Email/SMS notifications          │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
@@ -1813,13 +1813,13 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - MEILISEARCH_URL=http://meilisearch:7700
-      - MEILISEARCH_KEY=${MEILISEARCH_KEY}
+      - Typesense_URL=http://Typesense:7700
+      - Typesense_KEY=${Typesense_KEY}
     depends_on:
       - postgres
       - redis
       - minio
-      - meilisearch
+      - Typesense
     volumes:
       - ./steps:/app/steps
       - ./services:/app/services
@@ -1875,15 +1875,15 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
-  # MeiliSearch (lightweight search)
-  meilisearch:
-    image: getmeili/meilisearch:v1.6
+  # Typesense (lightweight search)
+  Typesense:
+    image: getmeili/Typesense:v1.6
     ports:
       - "7700:7700"
     environment:
-      - MEILI_MASTER_KEY=${MEILISEARCH_KEY:-masterKey123}
+      - MEILI_MASTER_KEY=${Typesense_KEY:-masterKey123}
     volumes:
-      - meilisearch_data:/meili_data
+      - Typesense_data:/meili_data
     restart: unless-stopped
 
   # Nginx Reverse Proxy
@@ -1913,7 +1913,7 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
-  meilisearch_data:
+  Typesense_data:
 ```
 
 ### 8.2 Dockerfile.motia
@@ -1971,7 +1971,7 @@ minio
 python-magic
 
 # Search
-meilisearch
+Typesense
 
 # Utilities
 pydantic
@@ -2036,7 +2036,7 @@ patch_all()
 - [ ] Document classification step
 - [ ] Field extraction step
 - [ ] Signature detection step
-- [ ] MeiliSearch integration
+- [ ] Typesense integration
 
 ### Phase 3: Configuration UI (Weeks 7-9)
 - [ ] Next.js + shadcn/ui setup
@@ -2086,7 +2086,7 @@ docker-compose exec motia python scripts/init_db.py
 # Frontend: http://localhost:3000
 # Motia Workbench: http://localhost:3002
 # MinIO Console: http://localhost:9001
-# MeiliSearch: http://localhost:7700
+# Typesense: http://localhost:7700
 ```
 
 ---

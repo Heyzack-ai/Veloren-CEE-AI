@@ -1,0 +1,4295 @@
+openapi: 3.0.3
+info:
+  title: CEE Validation System API
+  description: |
+    Comprehensive REST API for the CEE (Certificat d'Économie d'Énergie) Document Validation System.
+    
+    This API provides endpoints for:
+    - Authentication and user management
+    - Dossier lifecycle management
+    - Document upload and processing
+    - AI-powered field extraction and validation
+    - Human-in-the-loop validation workflows
+    - Feedback collection for model improvement
+    - Billing and payment tracking
+    - Analytics and reporting
+    - Configuration management
+    
+    ## Authentication
+    All endpoints except `/auth/login` require a valid JWT token in the Authorization header.
+    
+    ## Rate Limiting
+    API requests are rate-limited to 100 requests per minute per user.
+    
+    ## Pagination
+    List endpoints support pagination via `page` and `limit` query parameters.
+  version: 1.0.0
+  contact:
+    name: CEE Validation System Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.cee-validation.example.com/v1
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Dossiers
+    description: Dossier lifecycle management
+  - name: Documents
+    description: Document upload and processing
+  - name: Validation
+    description: Field validation and review
+  - name: Feedback
+    description: Human feedback for model improvement
+  - name: Processes
+    description: CEE process configuration
+  - name: Rules
+    description: Validation rule management
+  - name: Schemas
+    description: Document type and field schema management
+  - name: Users
+    description: User management
+  - name: Installers
+    description: Installer management
+  - name: Billing
+    description: Billing and payment management
+  - name: Analytics
+    description: Analytics and reporting
+  - name: Activity
+    description: Activity logging
+  - name: Search
+    description: Search functionality
+  - name: AI Configuration
+    description: AI model configuration
+  - name: Settings
+    description: System settings
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================
+  # AUTHENTICATION ENDPOINTS
+  # ============================================
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and return JWT tokens
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "validator@example.com"
+              password: "securePassword123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      description: Invalidate current session
+      operationId: logout
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Get new access token using refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      description: Get authenticated user's profile
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/password:
+    put:
+      tags: [Authentication]
+      summary: Change password
+      description: Change current user's password
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Password changed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============================================
+  # DOSSIER ENDPOINTS
+  # ============================================
+  /dossiers:
+    get:
+      tags: [Dossiers]
+      summary: List dossiers
+      description: Get paginated list of dossiers with optional filters
+      operationId: listDossiers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DossierStatus'
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/Priority'
+        - name: processCode
+          in: query
+          schema:
+            type: string
+        - name: installerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: assignedTo
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [submittedAt, priority, confidenceScore, reference]
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: List of dossiers
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DossierListItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Dossiers]
+      summary: Create dossier
+      description: Create a new dossier (typically by installer)
+      operationId: createDossier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDossierRequest'
+      responses:
+        '201':
+          description: Dossier created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /dossiers/{dossierId}:
+    get:
+      tags: [Dossiers]
+      summary: Get dossier
+      description: Get dossier details by ID
+      operationId: getDossier
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dossier details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Dossiers]
+      summary: Update dossier
+      description: Update dossier properties
+      operationId: updateDossier
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDossierRequest'
+      responses:
+        '200':
+          description: Dossier updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Dossiers]
+      summary: Delete dossier
+      description: Delete a draft dossier
+      operationId: deleteDossier
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Dossier deleted
+        '400':
+          description: Cannot delete non-draft dossier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/submit:
+    post:
+      tags: [Dossiers]
+      summary: Submit dossier
+      description: Submit dossier for processing
+      operationId: submitDossier
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dossier submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '400':
+          description: Missing required documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/assign:
+    post:
+      tags: [Dossiers]
+      summary: Assign dossier
+      description: Assign dossier to a validator
+      operationId: assignDossier
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Dossier assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/approve:
+    post:
+      tags: [Dossiers]
+      summary: Approve dossier
+      description: Approve dossier after validation
+      operationId: approveDossier
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveDossierRequest'
+      responses:
+        '200':
+          description: Dossier approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '400':
+          description: Validation incomplete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/reject:
+    post:
+      tags: [Dossiers]
+      summary: Reject dossier
+      description: Reject dossier with reason
+      operationId: rejectDossier
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectDossierRequest'
+      responses:
+        '200':
+          description: Dossier rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /dossiers/{dossierId}/timeline:
+    get:
+      tags: [Dossiers]
+      summary: Get dossier timeline
+      description: Get chronological events for a dossier
+      operationId: getDossierTimeline
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dossier timeline
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivityLog'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # DOCUMENT ENDPOINTS
+  # ============================================
+  /dossiers/{dossierId}/documents:
+    get:
+      tags: [Documents]
+      summary: List dossier documents
+      description: Get all documents for a dossier
+      operationId: listDossierDocuments
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Documents]
+      summary: Upload document
+      description: Upload a document to a dossier
+      operationId: uploadDocument
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                documentType:
+                  $ref: '#/components/schemas/DocumentType'
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Invalid file type or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /documents/{documentId}:
+    get:
+      tags: [Documents]
+      summary: Get document
+      description: Get document details
+      operationId: getDocument
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Documents]
+      summary: Delete document
+      description: Delete a document (only for draft dossiers)
+      operationId: deleteDocument
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted
+        '400':
+          description: Cannot delete from non-draft dossier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /documents/{documentId}/download:
+    get:
+      tags: [Documents]
+      summary: Download document
+      description: Download original document file
+      operationId: downloadDocument
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /documents/{documentId}/reprocess:
+    post:
+      tags: [Documents]
+      summary: Reprocess document
+      description: Trigger reprocessing of a document (OCR, extraction)
+      operationId: reprocessDocument
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Reprocessing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # VALIDATION ENDPOINTS
+  # ============================================
+  /documents/{documentId}/fields:
+    get:
+      tags: [Validation]
+      summary: Get extracted fields
+      description: Get all extracted fields for a document
+      operationId: getDocumentFields
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of extracted fields
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExtractedField'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /fields/{fieldId}:
+    patch:
+      tags: [Validation]
+      summary: Update field
+      description: Update an extracted field value or status
+      operationId: updateField
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFieldRequest'
+      responses:
+        '200':
+          description: Field updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractedField'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /fields/{fieldId}/confirm:
+    post:
+      tags: [Validation]
+      summary: Confirm field
+      description: Confirm an extracted field value is correct
+      operationId: confirmField
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmFieldRequest'
+      responses:
+        '200':
+          description: Field confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractedField'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /fields/{fieldId}/mark-wrong:
+    post:
+      tags: [Validation]
+      summary: Mark field as wrong
+      description: Mark an extracted field as incorrectly extracted
+      operationId: markFieldWrong
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkFieldWrongRequest'
+      responses:
+        '200':
+          description: Field marked as wrong
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractedField'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/validation-results:
+    get:
+      tags: [Validation]
+      summary: Get validation results
+      description: Get all validation rule results for a dossier
+      operationId: getValidationResults
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/validation-results/{ruleId}/override:
+    post:
+      tags: [Validation]
+      summary: Override validation rule
+      description: Override a failed validation rule with justification
+      operationId: overrideValidationRule
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideRuleRequest'
+      responses:
+        '200':
+          description: Rule overridden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # FEEDBACK ENDPOINTS
+  # ============================================
+  /dossiers/{dossierId}/feedback:
+    get:
+      tags: [Feedback]
+      summary: List dossier feedback
+      description: Get all feedback entries for a dossier
+      operationId: listDossierFeedback
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of feedback
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feedback'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Feedback]
+      summary: Create feedback
+      description: Submit feedback for model improvement
+      operationId: createFeedback
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeedbackRequest'
+      responses:
+        '201':
+          description: Feedback created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Feedback'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /feedback:
+    get:
+      tags: [Feedback]
+      summary: List all feedback
+      description: Get paginated list of all feedback (admin only)
+      operationId: listAllFeedback
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: feedbackType
+          in: query
+          schema:
+            $ref: '#/components/schemas/FeedbackType'
+        - name: usedForTraining
+          in: query
+          schema:
+            type: boolean
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of feedback
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Feedback'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /feedback/export:
+    get:
+      tags: [Feedback]
+      summary: Export training dataset
+      description: Export feedback as training dataset
+      operationId: exportTrainingDataset
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [jsonl, csv]
+            default: jsonl
+        - name: feedbackType
+          in: query
+          schema:
+            $ref: '#/components/schemas/FeedbackType'
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Training dataset file
+          content:
+            application/jsonl:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================
+  # PROCESS ENDPOINTS
+  # ============================================
+  /processes:
+    get:
+      tags: [Processes]
+      summary: List processes
+      description: Get all CEE processes
+      operationId: listProcesses
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/ProcessCategory'
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of processes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Process'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Processes]
+      summary: Create process
+      description: Create a new CEE process (admin only)
+      operationId: createProcess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProcessRequest'
+      responses:
+        '201':
+          description: Process created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Process'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /processes/{processId}:
+    get:
+      tags: [Processes]
+      summary: Get process
+      description: Get process details
+      operationId: getProcess
+      parameters:
+        - name: processId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Process details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Process'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Processes]
+      summary: Update process
+      description: Update process configuration
+      operationId: updateProcess
+      parameters:
+        - name: processId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProcessRequest'
+      responses:
+        '200':
+          description: Process updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Process'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # VALIDATION RULES ENDPOINTS
+  # ============================================
+  /rules:
+    get:
+      tags: [Rules]
+      summary: List validation rules
+      description: Get all validation rules
+      operationId: listRules
+      parameters:
+        - name: ruleType
+          in: query
+          schema:
+            type: string
+            enum: [document, cross_document, global]
+        - name: documentTypeId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidationRule'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Rules]
+      summary: Create validation rule
+      description: Create a new validation rule
+      operationId: createRule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name, ruleType, expression, errorMessage]
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+                ruleType:
+                  type: string
+                  enum: [document, cross_document, global]
+                documentTypeId:
+                  type: string
+                  format: uuid
+                expression:
+                  type: string
+                errorMessage:
+                  type: string
+                severity:
+                  type: string
+                  enum: [error, warning, info]
+                autoReject:
+                  type: boolean
+      responses:
+        '201':
+          description: Rule created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationRule'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /rules/{ruleId}:
+    get:
+      tags: [Rules]
+      summary: Get validation rule
+      description: Get rule details
+      operationId: getRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rule details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationRule'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Rules]
+      summary: Update validation rule
+      description: Update a validation rule
+      operationId: updateRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                expression:
+                  type: string
+                errorMessage:
+                  type: string
+                severity:
+                  type: string
+                  enum: [error, warning, info]
+                autoReject:
+                  type: boolean
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Rule updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationRule'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Rules]
+      summary: Delete validation rule
+      description: Delete a validation rule
+      operationId: deleteRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Rule deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /rules/{ruleId}/test:
+    post:
+      tags: [Rules]
+      summary: Test validation rule
+      description: Test a rule against sample data
+      operationId: testRule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [testData]
+              properties:
+                testData:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Test result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  passed:
+                    type: boolean
+                  message:
+                    type: string
+                  evaluatedExpression:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # USER MANAGEMENT ENDPOINTS
+  # ============================================
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      description: Get paginated list of users (admin only)
+      operationId: listUsers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Users]
+      summary: Create user
+      description: Create a new user (admin only)
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Get user
+      description: Get user details
+      operationId: getUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Users]
+      summary: Update user
+      description: Update user details
+      operationId: updateUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Users]
+      summary: Delete user
+      description: Deactivate a user
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: User deactivated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/reset-password:
+    post:
+      tags: [Users]
+      summary: Reset user password
+      description: Send password reset email to user
+      operationId: resetUserPassword
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Password reset email sent
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # INSTALLER MANAGEMENT ENDPOINTS
+  # ============================================
+  /installers:
+    get:
+      tags: [Installers]
+      summary: List installers
+      description: Get paginated list of installers
+      operationId: listInstallers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: rgeStatus
+          in: query
+          schema:
+            $ref: '#/components/schemas/RGEStatus'
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of installers
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Installer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Installers]
+      summary: Create installer
+      description: Create a new installer
+      operationId: createInstaller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstallerRequest'
+      responses:
+        '201':
+          description: Installer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Installer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /installers/{installerId}:
+    get:
+      tags: [Installers]
+      summary: Get installer
+      description: Get installer details
+      operationId: getInstaller
+      parameters:
+        - name: installerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Installer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Installer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Installers]
+      summary: Update installer
+      description: Update installer details
+      operationId: updateInstaller
+      parameters:
+        - name: installerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstallerRequest'
+      responses:
+        '200':
+          description: Installer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Installer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /installers/{installerId}/deactivate:
+    post:
+      tags: [Installers]
+      summary: Deactivate installer
+      description: Deactivate an installer
+      operationId: deactivateInstaller
+      parameters:
+        - name: installerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Installer deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Installer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /installers/{installerId}/dossiers:
+    get:
+      tags: [Installers]
+      summary: List installer dossiers
+      description: Get all dossiers for an installer
+      operationId: listInstallerDossiers
+      parameters:
+        - name: installerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DossierStatus'
+      responses:
+        '200':
+          description: List of dossiers
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/DossierListItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # BILLING ENDPOINTS
+  # ============================================
+  /billing/dashboard:
+    get:
+      tags: [Billing]
+      summary: Get billing dashboard
+      description: Get billing summary and statistics
+      operationId: getBillingDashboard
+      responses:
+        '200':
+          description: Billing dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /billing/ready-to-bill:
+    get:
+      tags: [Billing]
+      summary: List dossiers ready to bill
+      description: Get approved dossiers ready for billing
+      operationId: listReadyToBill
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: installerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of dossiers ready to bill
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/BillingDossier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /billing/{dossierId}:
+    get:
+      tags: [Billing]
+      summary: Get billing details
+      description: Get billing details for a dossier
+      operationId: getBillingDetails
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Billing details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingDossier'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /billing/{dossierId}/calculate:
+    get:
+      tags: [Billing]
+      summary: Calculate CEE premium
+      description: Calculate CEE premium for a dossier
+      operationId: calculateCEEPremium
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: CEE calculation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CEECalculation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /billing/{dossierId}/generate-invoice:
+    post:
+      tags: [Billing]
+      summary: Generate invoice
+      description: Generate invoice for a dossier
+      operationId: generateInvoice
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvoiceRequest'
+      responses:
+        '200':
+          description: Invoice generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingDossier'
+        '400':
+          description: Dossier not ready for billing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /billing/{dossierId}/mark-paid:
+    post:
+      tags: [Billing]
+      summary: Mark as paid
+      description: Mark a billed dossier as paid
+      operationId: markAsPaid
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkAsPaidRequest'
+      responses:
+        '200':
+          description: Marked as paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingDossier'
+        '400':
+          description: Dossier not billed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /billing/bulk-invoice:
+    post:
+      tags: [Billing]
+      summary: Generate bulk invoices
+      description: Generate invoices for multiple dossiers
+      operationId: generateBulkInvoices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvoiceRequest'
+      responses:
+        '200':
+          description: Invoices generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated:
+                    type: integer
+                  failed:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        dossierId:
+                          type: string
+                        error:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================
+  # ANALYTICS ENDPOINTS
+  # ============================================
+  /analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Get dashboard metrics
+      description: Get overall system metrics
+      operationId: getDashboardMetrics
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMetrics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /analytics/rules-performance:
+    get:
+      tags: [Analytics]
+      summary: Get rules performance
+      description: Get validation rules performance metrics
+      operationId: getRulesPerformance
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: ruleType
+          in: query
+          schema:
+            type: string
+            enum: [document, cross_document, global]
+      responses:
+        '200':
+          description: Rules performance metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RulePerformanceMetrics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /analytics/installers-performance:
+    get:
+      tags: [Analytics]
+      summary: Get installers performance
+      description: Get installer submission quality metrics
+      operationId: getInstallersPerformance
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Installers performance metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InstallerPerformanceMetrics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /analytics/validators-performance:
+    get:
+      tags: [Analytics]
+      summary: Get validators performance
+      description: Get validator productivity metrics
+      operationId: getValidatorsPerformance
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Validators performance metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidatorPerformanceMetrics'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /analytics/model-accuracy:
+    get:
+      tags: [Analytics]
+      summary: Get model accuracy
+      description: Get AI model accuracy metrics
+      operationId: getModelAccuracy
+      parameters:
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: task
+          in: query
+          schema:
+            $ref: '#/components/schemas/AITask'
+      responses:
+        '200':
+          description: Model accuracy metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/AITask'
+                  accuracy:
+                    type: number
+                  precision:
+                    type: number
+                  recall:
+                    type: number
+                  f1Score:
+                    type: number
+                  samplesEvaluated:
+                    type: integer
+                  trend:
+                    type: string
+                    enum: [up, down, stable]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================
+  # ACTIVITY LOG ENDPOINTS
+  # ============================================
+  /activity:
+    get:
+      tags: [Activity]
+      summary: List activity logs
+      description: Get paginated activity logs
+      operationId: listActivityLogs
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: activityType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ActivityType'
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: dossierId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of activity logs
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ActivityLog'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============================================
+  # SEARCH ENDPOINTS
+  # ============================================
+  /search:
+    get:
+      tags: [Search]
+      summary: Global search
+      description: Search across dossiers, documents, and installers
+      operationId: globalSearch
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: types
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [dossiers, documents, installers]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalSearchResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /search/dossiers:
+    post:
+      tags: [Search]
+      summary: Search dossiers
+      description: Advanced dossier search with filters
+      operationId: searchDossiers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Dossier search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /search/documents:
+    post:
+      tags: [Search]
+      summary: Search documents
+      description: Search documents by content or metadata
+      operationId: searchDocuments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Document search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /search/installers:
+    post:
+      tags: [Search]
+      summary: Search installers
+      description: Search installers by name, SIRET, or location
+      operationId: searchInstallers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Installer search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ============================================
+  # AI CONFIGURATION ENDPOINTS
+  # ============================================
+  /ai-config/providers:
+    get:
+      tags: [AI Configuration]
+      summary: List AI providers
+      description: Get all configured AI providers
+      operationId: listAIProviders
+      parameters:
+        - name: task
+          in: query
+          schema:
+            $ref: '#/components/schemas/AITask'
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of AI providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIProviderConfig'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [AI Configuration]
+      summary: Create AI provider
+      description: Configure a new AI provider
+      operationId: createAIProvider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAIProviderRequest'
+      responses:
+        '201':
+          description: AI provider created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIProviderConfig'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /ai-config/providers/{providerId}:
+    get:
+      tags: [AI Configuration]
+      summary: Get AI provider
+      description: Get AI provider configuration
+      operationId: getAIProvider
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: AI provider configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIProviderConfig'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [AI Configuration]
+      summary: Update AI provider
+      description: Update AI provider configuration
+      operationId: updateAIProvider
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                modelName:
+                  type: string
+                modelVersion:
+                  type: string
+                apiEndpoint:
+                  type: string
+                  format: uri
+                apiKey:
+                  type: string
+                  format: password
+                isActive:
+                  type: boolean
+                priority:
+                  type: integer
+                config:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: AI provider updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIProviderConfig'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [AI Configuration]
+      summary: Delete AI provider
+      description: Delete an AI provider configuration
+      operationId: deleteAIProvider
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: AI provider deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /ai-config/providers/{providerId}/test:
+    post:
+      tags: [AI Configuration]
+      summary: Test AI provider
+      description: Test AI provider connectivity and functionality
+      operationId: testAIProvider
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Test result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  latencyMs:
+                    type: integer
+                  message:
+                    type: string
+                  error:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # SETTINGS ENDPOINTS
+  # ============================================
+  /settings:
+    get:
+      tags: [Settings]
+      summary: Get all settings
+      description: Get all system settings
+      operationId: getSettings
+      responses:
+        '200':
+          description: System settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  general:
+                    $ref: '#/components/schemas/GeneralSettings'
+                  processing:
+                    $ref: '#/components/schemas/ProcessingSettings'
+                  security:
+                    $ref: '#/components/schemas/SecuritySettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /settings/general:
+    get:
+      tags: [Settings]
+      summary: Get general settings
+      description: Get general application settings
+      operationId: getGeneralSettings
+      responses:
+        '200':
+          description: General settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags: [Settings]
+      summary: Update general settings
+      description: Update general application settings
+      operationId: updateGeneralSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneralSettings'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneralSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /settings/processing:
+    get:
+      tags: [Settings]
+      summary: Get processing settings
+      description: Get document processing settings
+      operationId: getProcessingSettings
+      responses:
+        '200':
+          description: Processing settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags: [Settings]
+      summary: Update processing settings
+      description: Update document processing settings
+      operationId: updateProcessingSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessingSettings'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /settings/security:
+    get:
+      tags: [Settings]
+      summary: Get security settings
+      description: Get security settings
+      operationId: getSecuritySettings
+      responses:
+        '200':
+          description: Security settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecuritySettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags: [Settings]
+      summary: Update security settings
+      description: Update security settings
+      operationId: updateSecuritySettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SecuritySettings'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecuritySettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================
+  # DOCUMENT SCHEMA ENDPOINTS
+  # ============================================
+  /schemas/document-types:
+    get:
+      tags: [Schemas]
+      summary: List document types
+      description: Get all document type schemas
+      operationId: listDocumentTypes
+      responses:
+        '200':
+          description: List of document types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    code:
+                      $ref: '#/components/schemas/DocumentType'
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    fieldCount:
+                      type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /schemas/document-types/{documentTypeId}:
+    get:
+      tags: [Schemas]
+      summary: Get document type schema
+      description: Get field schema for a document type
+      operationId: getDocumentTypeSchema
+      parameters:
+        - name: documentTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document type schema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  code:
+                    $ref: '#/components/schemas/DocumentType'
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  fields:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        fieldName:
+                          type: string
+                        displayName:
+                          type: string
+                        category:
+                          type: string
+                        dataType:
+                          type: string
+                          enum: [string, number, date, boolean, enum, currency]
+                        isRequired:
+                          type: boolean
+                        validationRules:
+                          type: array
+                          items:
+                            type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Schemas]
+      summary: Update document type schema
+      description: Update field schema for a document type
+      operationId: updateDocumentTypeSchema
+      parameters:
+        - name: documentTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                fields:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      fieldName:
+                        type: string
+                      displayName:
+                        type: string
+                      category:
+                        type: string
+                      dataType:
+                        type: string
+                        enum: [string, number, date, boolean, enum, currency]
+                      isRequired:
+                        type: boolean
+                      validationRules:
+                        type: array
+                        items:
+                          type: string
+      responses:
+        '200':
+          description: Schema updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
+  # HEALTH CHECK ENDPOINT
+  # ============================================
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Check system health status
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  version:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [up, down]
+                      search:
+                        type: string
+                        enum: [up, down]
+                      storage:
+                        type: string
+                        enum: [up, down]
+                      ai:
+                        type: string
+                        enum: [up, down]
+
+# Components section starts here - will be continued
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized - invalid or missing token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+    Conflict:
+      description: Conflict - resource already exists or concurrent modification
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # ============================================
+    # COMMON SCHEMAS
+    # ============================================
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: "UNAUTHORIZED"
+        message:
+          type: string
+          example: "Invalid or expired token"
+        details:
+          type: object
+          additionalProperties: true
+
+    ValidationErrorResponse:
+      type: object
+      required: [code, message, errors]
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Request validation failed"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        totalPages:
+          type: integer
+          example: 8
+
+    # ============================================
+    # AUTHENTICATION SCHEMAS
+    # ============================================
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "validator@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "securePassword123"
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          format: password
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Token expiration in seconds
+          example: 3600
+        user:
+          $ref: '#/components/schemas/User'
+
+    # ============================================
+    # USER SCHEMAS
+    # ============================================
+    UserRole:
+      type: string
+      enum: [administrator, validator, installer]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        isActive:
+          type: boolean
+        lastLogin:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440000"
+        email: "validator@example.com"
+        name: "Jean Dupont"
+        role: "validator"
+        isActive: true
+        lastLogin: "2025-11-28T10:30:00Z"
+        createdAt: "2025-01-15T08:00:00Z"
+
+    CreateUserRequest:
+      type: object
+      required: [email, name, role]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          minLength: 2
+        role:
+          $ref: '#/components/schemas/UserRole'
+        sendWelcomeEmail:
+          type: boolean
+          default: true
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        isActive:
+          type: boolean
+
+    # ============================================
+    # DOSSIER SCHEMAS
+    # ============================================
+    DossierStatus:
+      type: string
+      enum: [draft, processing, awaiting_review, approved, rejected, billed, paid]
+
+    Priority:
+      type: string
+      enum: [low, normal, high, urgent]
+
+    PrecarityStatus:
+      type: string
+      enum: [classique, modeste, tres_modeste]
+
+    Beneficiary:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        precarityStatus:
+          $ref: '#/components/schemas/PrecarityStatus'
+        fiscalReference:
+          type: string
+        fiscalParts:
+          type: number
+
+    Dossier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+          description: Unique dossier reference (e.g., CEE-2025-001234)
+        status:
+          $ref: '#/components/schemas/DossierStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        processId:
+          type: string
+          format: uuid
+        processCode:
+          type: string
+          example: "BAR-TH-171"
+        processName:
+          type: string
+          example: "Pompe à chaleur air/eau"
+        installerId:
+          type: string
+          format: uuid
+        installerName:
+          type: string
+        beneficiary:
+          $ref: '#/components/schemas/Beneficiary'
+        confidenceScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        assignedTo:
+          type: string
+          format: uuid
+        assignedToName:
+          type: string
+        documentCount:
+          type: integer
+        validationProgress:
+          type: number
+          format: float
+          description: Percentage of fields validated (0-100)
+        submittedAt:
+          type: string
+          format: date-time
+        validatedAt:
+          type: string
+          format: date-time
+        approvedAt:
+          type: string
+          format: date-time
+        rejectedAt:
+          type: string
+          format: date-time
+        rejectionReason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440001"
+        reference: "CEE-2025-001234"
+        status: "awaiting_review"
+        priority: "normal"
+        processCode: "BAR-TH-171"
+        processName: "Pompe à chaleur air/eau"
+        installerName: "EcoTherm Solutions"
+        beneficiary:
+          name: "Marie Martin"
+          address: "15 Rue de la Paix"
+          city: "Paris"
+          postalCode: "75001"
+        confidenceScore: 0.87
+        documentCount: 5
+        validationProgress: 65.5
+        submittedAt: "2025-11-25T14:30:00Z"
+
+    DossierListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        status:
+          $ref: '#/components/schemas/DossierStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        processCode:
+          type: string
+        beneficiaryName:
+          type: string
+        installerName:
+          type: string
+        confidenceScore:
+          type: number
+        assignedToName:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+
+    CreateDossierRequest:
+      type: object
+      required: [processId, installerId]
+      properties:
+        processId:
+          type: string
+          format: uuid
+        installerId:
+          type: string
+          format: uuid
+        beneficiary:
+          $ref: '#/components/schemas/Beneficiary'
+
+    UpdateDossierRequest:
+      type: object
+      properties:
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assignedTo:
+          type: string
+          format: uuid
+        beneficiary:
+          $ref: '#/components/schemas/Beneficiary'
+
+    ApproveDossierRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+
+    RejectDossierRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+        corrections:
+          type: array
+          items:
+            type: object
+            properties:
+              documentType:
+                type: string
+              description:
+                type: string
+
+    # ============================================
+    # DOCUMENT SCHEMAS
+    # ============================================
+    DocumentType:
+      type: string
+      enum: [devis, facture, attestation_honneur, cadre_contribution, avis_imposition, photos, note_dimensionnement, other]
+
+    ProcessingStatus:
+      type: string
+      enum: [pending, processing, classified, ocr_complete, extracted, validated, failed]
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dossierId:
+          type: string
+          format: uuid
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        filename:
+          type: string
+        originalFilename:
+          type: string
+        storagePath:
+          type: string
+        mimeType:
+          type: string
+        fileSize:
+          type: integer
+          description: File size in bytes
+        processingStatus:
+          $ref: '#/components/schemas/ProcessingStatus'
+        classificationConfidence:
+          type: number
+          format: float
+        ocrText:
+          type: string
+        pageCount:
+          type: integer
+        thumbnailUrl:
+          type: string
+          format: uri
+        previewUrl:
+          type: string
+          format: uri
+        uploadedAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440002"
+        dossierId: "550e8400-e29b-41d4-a716-446655440001"
+        documentType: "devis"
+        filename: "devis_2025_001.pdf"
+        originalFilename: "Devis PAC.pdf"
+        mimeType: "application/pdf"
+        fileSize: 245678
+        processingStatus: "extracted"
+        classificationConfidence: 0.95
+        pageCount: 3
+        uploadedAt: "2025-11-25T14:30:00Z"
+
+    UploadDocumentRequest:
+      type: object
+      properties:
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+          description: Optional hint for document classification
+
+    # ============================================
+    # VALIDATION & EXTRACTED FIELD SCHEMAS
+    # ============================================
+    FieldValidationStatus:
+      type: string
+      enum: [unreviewed, confirmed, marked_wrong, corrected]
+
+    ExtractedField:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        fieldSchemaId:
+          type: string
+          format: uuid
+        fieldName:
+          type: string
+        displayName:
+          type: string
+        category:
+          type: string
+        dataType:
+          type: string
+          enum: [string, number, date, boolean, enum, currency]
+        extractedValue:
+          type: string
+        validatedValue:
+          type: string
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        status:
+          $ref: '#/components/schemas/FieldValidationStatus'
+        sourceRegion:
+          type: object
+          properties:
+            page:
+              type: integer
+            x:
+              type: number
+            y:
+              type: number
+            width:
+              type: number
+            height:
+              type: number
+        validationErrors:
+          type: array
+          items:
+            type: string
+        validatedBy:
+          type: string
+          format: uuid
+        validatedAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440003"
+        fieldName: "prime_cee"
+        displayName: "Prime CEE"
+        category: "financial"
+        dataType: "currency"
+        extractedValue: "4500.00"
+        confidence: 0.92
+        status: "unreviewed"
+        sourceRegion:
+          page: 1
+          x: 120
+          y: 450
+          width: 80
+          height: 20
+
+    UpdateFieldRequest:
+      type: object
+      properties:
+        validatedValue:
+          type: string
+        status:
+          $ref: '#/components/schemas/FieldValidationStatus'
+
+    ConfirmFieldRequest:
+      type: object
+      properties:
+        value:
+          type: string
+          description: Optional corrected value
+
+    MarkFieldWrongRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+        correctValue:
+          type: string
+
+    ValidationRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        ruleType:
+          type: string
+          enum: [document, cross_document, global]
+        documentTypeId:
+          type: string
+          format: uuid
+        expression:
+          type: string
+        errorMessage:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning, info]
+        autoReject:
+          type: boolean
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ValidationResult:
+      type: object
+      properties:
+        ruleId:
+          type: string
+          format: uuid
+        ruleName:
+          type: string
+        status:
+          type: string
+          enum: [passed, failed, warning, skipped]
+        message:
+          type: string
+        overridden:
+          type: boolean
+        overriddenBy:
+          type: string
+          format: uuid
+        overrideReason:
+          type: string
+
+    OverrideRuleRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 10
+
+    # ============================================
+    # FEEDBACK SCHEMAS
+    # ============================================
+    FeedbackType:
+      type: string
+      enum: [field_correction, extraction_error, classification_error, rule_override, general]
+
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dossierId:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        fieldId:
+          type: string
+          format: uuid
+        feedbackType:
+          $ref: '#/components/schemas/FeedbackType'
+        originalValue:
+          type: string
+        correctedValue:
+          type: string
+        reason:
+          type: string
+        modelName:
+          type: string
+        modelVersion:
+          type: string
+        usedForTraining:
+          type: boolean
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateFeedbackRequest:
+      type: object
+      required: [feedbackType]
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        fieldId:
+          type: string
+          format: uuid
+        feedbackType:
+          $ref: '#/components/schemas/FeedbackType'
+        originalValue:
+          type: string
+        correctedValue:
+          type: string
+        reason:
+          type: string
+
+    # ============================================
+    # PROCESS SCHEMAS
+    # ============================================
+    ProcessCategory:
+      type: string
+      enum: [BAR, BAT, IND]
+      description: "BAR=Residential, BAT=Tertiary, IND=Industrial"
+
+    DocumentRequirement:
+      type: object
+      properties:
+        documentTypeId:
+          type: string
+          format: uuid
+        documentTypeName:
+          type: string
+        isRequired:
+          type: boolean
+        isConditional:
+          type: boolean
+        condition:
+          type: string
+        description:
+          type: string
+
+    Process:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: "BAR-TH-171"
+        name:
+          type: string
+          example: "Pompe à chaleur air/eau"
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/ProcessCategory'
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        requiredDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentRequirement'
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440010"
+        code: "BAR-TH-171"
+        name: "Pompe à chaleur air/eau"
+        category: "BAR"
+        isActive: true
+        version: 3
+
+    CreateProcessRequest:
+      type: object
+      required: [code, name, category]
+      properties:
+        code:
+          type: string
+          pattern: "^(BAR|BAT|IND)-[A-Z]{2}-[0-9]{3}$"
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/ProcessCategory'
+        requiredDocuments:
+          type: array
+          items:
+            type: object
+            properties:
+              documentTypeId:
+                type: string
+                format: uuid
+              isRequired:
+                type: boolean
+              condition:
+                type: string
+
+    # ============================================
+    # INSTALLER SCHEMAS
+    # ============================================
+    RGEStatus:
+      type: string
+      enum: [valid, expired, not_verified, pending]
+
+    Installer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyName:
+          type: string
+        siret:
+          type: string
+          pattern: "^[0-9]{14}$"
+        siren:
+          type: string
+          pattern: "^[0-9]{9}$"
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        contactName:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        contactPhone:
+          type: string
+        rgeNumber:
+          type: string
+        rgeValidUntil:
+          type: string
+          format: date
+        rgeStatus:
+          $ref: '#/components/schemas/RGEStatus'
+        qualifications:
+          type: array
+          items:
+            type: string
+        contractReference:
+          type: string
+        volumeCommitmentGwh:
+          type: number
+        pricePerKwhStandard:
+          type: number
+        pricePerKwhPrecarity:
+          type: number
+        isActive:
+          type: boolean
+        totalDossiers:
+          type: integer
+        activeDossiers:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440020"
+        companyName: "EcoTherm Solutions"
+        siret: "12345678901234"
+        city: "Lyon"
+        contactName: "Pierre Durand"
+        contactEmail: "contact@ecotherm.fr"
+        rgeStatus: "valid"
+        rgeValidUntil: "2026-06-30"
+        qualifications: ["QualiPAC", "RGE"]
+        isActive: true
+        totalDossiers: 156
+        activeDossiers: 12
+
+    CreateInstallerRequest:
+      type: object
+      required: [companyName, siret, contactName, contactEmail]
+      properties:
+        companyName:
+          type: string
+        siret:
+          type: string
+          pattern: "^[0-9]{14}$"
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        contactName:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        contactPhone:
+          type: string
+        rgeNumber:
+          type: string
+        rgeValidUntil:
+          type: string
+          format: date
+        qualifications:
+          type: array
+          items:
+            type: string
+        contractReference:
+          type: string
+        volumeCommitmentGwh:
+          type: number
+        pricePerKwhStandard:
+          type: number
+        pricePerKwhPrecarity:
+          type: number
+
+    # ============================================
+    # BILLING SCHEMAS
+    # ============================================
+    BillingStatus:
+      type: string
+      enum: [pending, billed, paid, overdue]
+
+    PaymentMethod:
+      type: string
+      enum: [bank_transfer, check, other]
+
+    BillingDossier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dossierId:
+          type: string
+          format: uuid
+        dossierReference:
+          type: string
+        beneficiaryName:
+          type: string
+        installerName:
+          type: string
+        installerId:
+          type: string
+          format: uuid
+        processCode:
+          type: string
+        approvedAt:
+          type: string
+          format: date-time
+        primeAmount:
+          type: number
+          format: float
+        billingStatus:
+          $ref: '#/components/schemas/BillingStatus'
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        paymentDate:
+          type: string
+          format: date
+        paymentReference:
+          type: string
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+
+    CEECalculation:
+      type: object
+      properties:
+        operationCode:
+          type: string
+        climateZone:
+          type: string
+          enum: [H1, H2, H3]
+        heatedSurface:
+          type: number
+        buildingType:
+          type: string
+        replacedEnergySource:
+          type: string
+        precarityStatus:
+          $ref: '#/components/schemas/PrecarityStatus'
+        kwhCumac:
+          type: number
+        pricePerKwh:
+          type: number
+        totalPrime:
+          type: number
+
+    GenerateInvoiceRequest:
+      type: object
+      properties:
+        invoiceDate:
+          type: string
+          format: date
+        notes:
+          type: string
+        dossierIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: For bulk invoice generation
+
+    MarkAsPaidRequest:
+      type: object
+      required: [paymentDate, paymentMethod]
+      properties:
+        paymentDate:
+          type: string
+          format: date
+        paymentReference:
+          type: string
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        notes:
+          type: string
+
+    BillingSummary:
+      type: object
+      properties:
+        readyToBill:
+          type: object
+          properties:
+            count:
+              type: integer
+            amount:
+              type: number
+        billedThisMonth:
+          type: object
+          properties:
+            count:
+              type: integer
+            amount:
+              type: number
+        paidThisMonth:
+          type: object
+          properties:
+            count:
+              type: integer
+            amount:
+              type: number
+        outstanding:
+          type: object
+          properties:
+            count:
+              type: integer
+            amount:
+              type: number
+
+    # ============================================
+    # ANALYTICS SCHEMAS
+    # ============================================
+    DashboardMetrics:
+      type: object
+      properties:
+        dossiers:
+          type: object
+          properties:
+            total:
+              type: integer
+            byStatus:
+              type: object
+              additionalProperties:
+                type: integer
+            submittedToday:
+              type: integer
+            validatedToday:
+              type: integer
+            avgProcessingTimeHours:
+              type: number
+        validation:
+          type: object
+          properties:
+            pendingReview:
+              type: integer
+            avgConfidence:
+              type: number
+            correctionRate:
+              type: number
+            overrideRate:
+              type: number
+        performance:
+          type: object
+          properties:
+            avgValidationTimeMinutes:
+              type: number
+            dossiersPerValidator:
+              type: object
+              additionalProperties:
+                type: integer
+            modelAccuracy:
+              type: object
+              additionalProperties:
+                type: number
+
+    RulePerformanceMetrics:
+      type: object
+      properties:
+        ruleId:
+          type: string
+          format: uuid
+        ruleName:
+          type: string
+        timesEvaluated:
+          type: integer
+        passedCount:
+          type: integer
+        passedPercentage:
+          type: number
+        failedCount:
+          type: integer
+        failedPercentage:
+          type: number
+        overrideCount:
+          type: integer
+        overridePercentage:
+          type: number
+
+    InstallerPerformanceMetrics:
+      type: object
+      properties:
+        installerId:
+          type: string
+          format: uuid
+        installerName:
+          type: string
+        dossiersSubmitted:
+          type: integer
+        approvalRate:
+          type: number
+        avgIssuesPerDossier:
+          type: number
+        trend:
+          type: string
+          enum: [up, down, stable]
+
+    ValidatorPerformanceMetrics:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        userName:
+          type: string
+        dossiersValidated:
+          type: integer
+        avgTimePerDossierMinutes:
+          type: number
+        accuracyRate:
+          type: number
+        overridesMade:
+          type: integer
+
+    # ============================================
+    # ACTIVITY LOG SCHEMAS
+    # ============================================
+    ActivityType:
+      type: string
+      enum:
+        - dossier_created
+        - dossier_submitted
+        - dossier_assigned
+        - dossier_approved
+        - dossier_rejected
+        - document_uploaded
+        - document_processed
+        - field_confirmed
+        - field_corrected
+        - rule_overridden
+        - user_login
+        - user_logout
+        - config_changed
+        - invoice_generated
+        - payment_recorded
+
+    ActivityLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        activityType:
+          $ref: '#/components/schemas/ActivityType'
+        description:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        userName:
+          type: string
+        dossierId:
+          type: string
+          format: uuid
+        dossierReference:
+          type: string
+        documentId:
+          type: string
+          format: uuid
+        metadata:
+          type: object
+          additionalProperties: true
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440030"
+        activityType: "dossier_approved"
+        description: "Dossier CEE-2025-001234 approved"
+        userName: "Jean Dupont"
+        dossierReference: "CEE-2025-001234"
+        createdAt: "2025-11-28T10:30:00Z"
+
+    # ============================================
+    # SEARCH SCHEMAS
+    # ============================================
+    SearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 2
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+        page:
+          type: integer
+          default: 1
+        perPage:
+          type: integer
+          default: 20
+          maximum: 100
+
+    SearchResult:
+      type: object
+      properties:
+        hits:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+        page:
+          type: integer
+        totalPages:
+          type: integer
+
+    GlobalSearchResult:
+      type: object
+      properties:
+        dossiers:
+          $ref: '#/components/schemas/SearchResult'
+        documents:
+          $ref: '#/components/schemas/SearchResult'
+        installers:
+          $ref: '#/components/schemas/SearchResult'
+
+    # ============================================
+    # AI CONFIGURATION SCHEMAS
+    # ============================================
+    AITask:
+      type: string
+      enum: [classification, extraction, validation, ocr]
+
+    AIProviderType:
+      type: string
+      enum: [openai, anthropic, mistral, ollama, vllm, docling, paddleocr]
+
+    AIProviderConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        task:
+          $ref: '#/components/schemas/AITask'
+        providerType:
+          $ref: '#/components/schemas/AIProviderType'
+        modelName:
+          type: string
+        modelVersion:
+          type: string
+        apiEndpoint:
+          type: string
+          format: uri
+        isActive:
+          type: boolean
+        priority:
+          type: integer
+          description: Lower number = higher priority
+        config:
+          type: object
+          additionalProperties: true
+          description: Provider-specific configuration
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: "550e8400-e29b-41d4-a716-446655440040"
+        task: "extraction"
+        providerType: "openai"
+        modelName: "gpt-4-vision-preview"
+        isActive: true
+        priority: 1
+
+    CreateAIProviderRequest:
+      type: object
+      required: [task, providerType, modelName]
+      properties:
+        task:
+          $ref: '#/components/schemas/AITask'
+        providerType:
+          $ref: '#/components/schemas/AIProviderType'
+        modelName:
+          type: string
+        modelVersion:
+          type: string
+        apiEndpoint:
+          type: string
+          format: uri
+        apiKey:
+          type: string
+          format: password
+        priority:
+          type: integer
+        config:
+          type: object
+          additionalProperties: true
+
+    # ============================================
+    # SETTINGS SCHEMAS
+    # ============================================
+    GeneralSettings:
+      type: object
+      properties:
+        applicationName:
+          type: string
+        logoUrl:
+          type: string
+          format: uri
+        primaryColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{6}$"
+        defaultLanguage:
+          type: string
+          enum: [fr, en]
+        timezone:
+          type: string
+
+    ProcessingSettings:
+      type: object
+      properties:
+        defaultConfidenceThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        autoAssignmentEnabled:
+          type: boolean
+        retryAttempts:
+          type: integer
+        retryDelaySeconds:
+          type: integer
+
+    SecuritySettings:
+      type: object
+      properties:
+        sessionTimeoutMinutes:
+          type: integer
+        passwordMinLength:
+          type: integer
+        passwordRequireUppercase:
+          type: boolean
+        passwordRequireNumbers:
+          type: boolean
+        passwordRequireSpecialChars:
+          type: boolean
+        twoFactorRequired:
+          type: boolean
+        ipAllowlist:
+          type: array
+          items:
+            type: string
+

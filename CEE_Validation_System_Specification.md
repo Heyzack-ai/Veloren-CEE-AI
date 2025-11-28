@@ -1207,21 +1207,20 @@ CONTRACT (Partnership Agreement)
 |-----------|-------------------|--------------|
 | **Document Parsing** | Docling (IBM) | PyMuPDF, pdf2image |
 | **OCR Engine** | Granite-Docling | Mistral OCR, PaddleOCR, Tesseract |
-| **VLM (Vision-Language)** | Qwen2-VL-7B | LLaVA, PaliGemma |
+| **VLM (Vision-Language)** | Qwen2-VL-7B | Gemini2.5, Qwen3 vl 8b |
 | **Layout Analysis** | Docling Heron Model | LayoutLMv3, DiT |
 | **Table Extraction** | TableFormer (Docling) | TATR, TableTransformer |
 | **NER** | GLiNER / spaCy | Flair, Stanza |
 | **Handwriting Detection** | Custom CNN + Transformer | Azure Form Recognizer |
-| **Signature Verification** | Siamese Network | Triplet Loss Network |
-| **Text Embedding** | sentence-transformers | OpenAI embeddings |
-| **Vector Store** | ChromaDB | Qdrant, Milvus, Pinecone |
-| **Orchestration** | LlamaIndex | LangChain, Haystack |
+| **Text Embedding** | OpenAI embeddings |
+| **Vector Store** | Typesense |
+| **Orchestration** | LlamaIndex | Motia |
 | **Task Queue** | Celery + Redis | RQ, Dramatiq |
 | **Backend** | FastAPI | Django REST, Flask |
 | **Frontend** | Next.js + React | Vue.js, Angular |
-| **Database** | PostgreSQL | MySQL, MongoDB |
+| **Database** | PostgreSQL |
 | **Object Storage** | MinIO (S3-compatible) | AWS S3, GCS |
-| **Search** | Elasticsearch | MeiliSearch, Typesense |
+| **Search** |Typesense |
 | **Monitoring** | Prometheus + Grafana | DataDog, New Relic |
 
 ### 5.2 Pipeline Architecture Code Structure
