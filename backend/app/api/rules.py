@@ -41,12 +41,12 @@ async def create_rule(
 
 @router.get("")
 async def list_rules(
+    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)],
     process_id: Optional[UUID] = Query(None),
     document_type_id: Optional[UUID] = Query(None),
     rule_type: Optional[str] = Query(None),
-    is_active: Optional[bool] = Query(None),
-    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    is_active: Optional[bool] = Query(None)
 ):
     """List validation rules."""
     query = select(ValidationRule)

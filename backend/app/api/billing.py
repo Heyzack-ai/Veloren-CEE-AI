@@ -19,10 +19,10 @@ router = APIRouter(prefix="/api/billing", tags=["billing"])
 
 @router.get("/summary", response_model=BillingSummary)
 async def get_billing_summary(
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None)
 ):
     """Get billing summary."""
     query = select(Invoice)
@@ -50,9 +50,9 @@ async def get_billing_summary(
 
 @router.get("/dossiers", response_model=list[dict])
 async def list_billable_dossiers(
-    status: Optional[str] = Query(None),
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    status: Optional[str] = Query(None)
 ):
     """List billable dossiers."""
     query = select(Dossier).where(Dossier.status == "approved")
@@ -83,10 +83,10 @@ async def list_billable_dossiers(
 @router.post("/dossiers/{dossier_id}/invoice", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
 async def generate_invoice(
     dossier_id: UUID,
-    kwh_cumac: Optional[Decimal] = None,
-    price_per_kwh: Optional[Decimal] = None,
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    kwh_cumac: Optional[Decimal] = None,
+    price_per_kwh: Optional[Decimal] = None
 ):
     """Generate invoice for dossier."""
     # Get dossier
@@ -163,10 +163,10 @@ async def record_payment(
 
 @router.get("/invoices", response_model=list[InvoiceResponse])
 async def list_invoices(
-    status: Optional[str] = Query(None),
-    installer_id: Optional[UUID] = Query(None),
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    status: Optional[str] = Query(None),
+    installer_id: Optional[UUID] = Query(None)
 ):
     """List invoices."""
     query = select(Invoice)
