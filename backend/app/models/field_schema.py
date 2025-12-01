@@ -32,6 +32,10 @@ class FieldSchema(Base):
     )
     
     # Relationships
-    document_type = relationship("DocumentType", back_populates="field_schemas")
+    document_type = relationship(
+        "DocumentType", 
+        back_populates="field_schemas",
+        primaryjoin="FieldSchema.document_type_id == DocumentType.id"
+    )
     extracted_fields = relationship("ExtractedField", back_populates="field_schema")
 

@@ -23,5 +23,16 @@ class DocumentType(Base):
     
     # Relationships
     documents = relationship("Document", back_populates="document_type")
-    field_schemas = relationship("FieldSchema", back_populates="document_type")
+    # field_schemas: all field schemas that belong to this document type
+    field_schemas = relationship(
+        "FieldSchema", 
+        back_populates="document_type",
+        primaryjoin="DocumentType.id == FieldSchema.document_type_id"
+    )
+    # extraction_schema: the specific field schema used for extraction (if any)
+    extraction_schema = relationship(
+        "FieldSchema",
+        primaryjoin="DocumentType.extraction_schema_id == FieldSchema.id",
+        uselist=False
+    )
     rules = relationship("ValidationRule", back_populates="document_type")

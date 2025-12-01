@@ -34,6 +34,7 @@ async def init_db():
         admin_user = User(
             email="admin@example.com",
             password_hash=get_password_hash("admin123"),
+            name="Administrator",
             role=UserRole.ADMINISTRATOR,
             active=True
         )
