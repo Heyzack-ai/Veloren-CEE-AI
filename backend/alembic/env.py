@@ -85,18 +85,55 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    import asyncio
+    from sqlalchemy.exc import OperationalError
+    
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
-    connectable = async_engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-
-    await connectable.dispose()
+    database_url = config.get_main_option("sqlalchemy.url")
+    configuration["sqlalchemy.url"] = database_url
+    
+    # Print connection info for debugging
+    print(f"Connecting to database: {database_url.split('@')[1] if '@' in database_url else '***'}")
+    
+    # Retry connection with exponential backoff
+    max_retries = 5
+    retry_delay = 2
+    
+    for attempt in range(max_retries):
+        try:
+            connectable = async_engine_from_config(
+                configuration,
+                prefix="sqlalchemy.",
+                poolclass=pool.NullPool,
+            )
+            
+            async with connectable.connect() as connection:
+                await connection.run_sync(do_run_migrations)
+            
+            await connectable.dispose()
+            print("✓ Migrations completed successfully")
+            return
+            
+        except OperationalError as e:
+            if attempt < max_retries - 1:
+                print(f"Database connection failed (attempt {attempt + 1}/{max_retries}): {e}")
+                print(f"Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                print(f"ERROR: Failed to connect to database after {max_retries} attempts")
+                print(f"Database URL: {database_url.split('@')[1] if '@' in database_url else '***'}")
+                print(f"Error: {e}")
+                print("\nTroubleshooting:")
+                print("1. Verify database is running and accessible")
+                print("2. Check DATABASE_URL is correct")
+                print("3. Verify network connectivity between containers")
+                print("4. Check database credentials and permissions")
+                raise
+        except Exception as e:
+            print(f"ERROR: Migration failed with error: {e}")
+            print(f"Database URL: {database_url.split('@')[1] if '@' in database_url else '***'}")
+            raise
 
 
 if context.is_offline_mode():
