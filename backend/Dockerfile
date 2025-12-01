@@ -61,7 +61,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run database checks, wait for DB, migrations and start server
-# Migrations run automatically on container startup with retry logic
-CMD ["sh", "-c", "python scripts/check_db_connection.py && python scripts/wait_for_db.py && echo 'Running database migrations...' && alembic upgrade head && echo 'Migrations completed successfully' && echo 'Starting application server...' && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"]
+# Start server
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 
