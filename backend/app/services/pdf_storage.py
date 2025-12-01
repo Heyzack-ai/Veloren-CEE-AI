@@ -2,6 +2,7 @@
 import uuid
 from pathlib import Path
 from typing import Optional
+from uuid import UUID
 from fastapi import UploadFile
 import boto3
 from botocore.exceptions import ClientError, BotoCoreError
@@ -59,17 +60,17 @@ class PDFStorageService:
             else:
                 raise Exception(f"Failed to access S3 bucket: {e}")
     
-    def _get_s3_key(self, submission_id: int, filename: str) -> str:
+    def _get_s3_key(self, dossier_id: UUID, filename: str) -> str:
         """Generate S3 key for a file."""
-        return f"submissions/{submission_id}/{filename}"
+        return f"dossiers/{dossier_id}/{filename}"
     
-    async def save_file(self, file: UploadFile, submission_id: int) -> tuple[str, int]:
+    async def save_file(self, file: UploadFile, dossier_id: UUID) -> tuple[str, int]:
         """
         Save uploaded PDF file to S3 or local storage.
         
         Args:
             file: Uploaded file
-            submission_id: Submission ID
+            dossier_id: Dossier ID
             
         Returns:
             Tuple of (file_path/s3_key, file_size)
@@ -79,22 +80,25 @@ class PDFStorageService:
         unique_filename = f"{uuid.uuid4()}{file_ext}"
         
         # Read file content
-        content = await file.read()
+        if hasattr(file, 'read'):
+            content = await file.read()
+        else:
+            content = file
         file_size = len(content)
         
         if self.use_s3:
             # Upload to S3
-            s3_key = self._get_s3_key(submission_id, unique_filename)
+            s3_key = self._get_s3_key(dossier_id, unique_filename)
             
             try:
                 self.s3_client.put_object(
                     Bucket=self.bucket_name,
                     Key=s3_key,
                     Body=content,
-                    ContentType=file.content_type or "application/pdf",
+                    ContentType=getattr(file, 'content_type', None) or "application/pdf",
                     Metadata={
-                        "original_filename": file.filename or "unknown",
-                        "submission_id": str(submission_id)
+                        "original_filename": getattr(file, 'filename', None) or "unknown",
+                        "dossier_id": str(dossier_id)
                     }
                 )
                 # Return S3 key as file_path for database storage
@@ -103,10 +107,10 @@ class PDFStorageService:
                 raise Exception(f"Failed to upload file to S3: {e}")
         else:
             # Local storage fallback
-            submission_dir = self.upload_dir / str(submission_id)
-            submission_dir.mkdir(parents=True, exist_ok=True)
+            dossier_dir = self.upload_dir / str(dossier_id)
+            dossier_dir.mkdir(parents=True, exist_ok=True)
             
-            file_path = submission_dir / unique_filename
+            file_path = dossier_dir / unique_filename
             with open(file_path, "wb") as f:
                 f.write(content)
             

@@ -1,10 +1,19 @@
 """Typesense client configuration."""
-import typesense
+try:
+    import typesense
+    TYPESENSE_AVAILABLE = True
+except ImportError:
+    TYPESENSE_AVAILABLE = False
+    typesense = None
+
 from app.core.config import settings
 
 
-def get_typesense_client() -> typesense.Client:
+def get_typesense_client():
     """Create Typesense client instance."""
+    if not TYPESENSE_AVAILABLE:
+        raise ImportError("typesense module not installed. Install it with: pip install typesense")
+    
     return typesense.Client({
         "nodes": [{
             "host": settings.TYPESENSE_HOST,

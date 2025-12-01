@@ -1,35 +1,60 @@
 """Validation schemas."""
 from datetime import datetime
+from typing import Optional, Any
+from uuid import UUID
 from pydantic import BaseModel
-from typing import Dict, Any, Optional, List
+from app.models.extracted_field import FieldStatus
 
 
-class RuleResultResponse(BaseModel):
-    """Rule result response schema."""
-    id: int
-    submission_id: int
-    rule_id: int
-    passed: bool
-    result_data: Optional[Dict[str, Any]]
-    error_message: Optional[str]
+class ExtractedFieldResponse(BaseModel):
+    """Extracted field response schema."""
+    id: UUID
+    document_id: UUID
+    dossier_id: UUID
+    field_schema_id: Optional[UUID] = None
+    field_name: str
+    display_name: str
+    extracted_value: Optional[Any] = None
+    data_type: str
+    confidence: Optional[float] = None
+    status: FieldStatus
+    original_value: Optional[Any] = None
+    corrected_value: Optional[Any] = None
+    bounding_box: Optional[dict] = None
+    page_number: Optional[int] = None
+    extraction_method: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class FieldUpdate(BaseModel):
+    """Field update schema."""
+    extracted_value: Optional[Any] = None
+    corrected_value: Optional[Any] = None
+
+
+class ValidationRuleResult(BaseModel):
+    """Validation rule result schema."""
+    id: UUID
+    rule_id: UUID
+    status: str  # 'passed', 'warning', 'error'
+    message: Optional[str] = None
+    affected_fields: list[str]
+    overridden: bool
+    override_reason: Optional[str] = None
     executed_at: datetime
     
     class Config:
         from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
 
 
-class ValidationRunRequest(BaseModel):
-    """Validation run request schema."""
-    submission_id: int
-    rule_ids: Optional[List[int]] = None  # If None, run all rules for document type
-
-
-class ValidationResponse(BaseModel):
-    """Validation response schema."""
-    submission_id: int
-    results: List[RuleResultResponse]
-    all_passed: bool
-
+class ValidationStateResponse(BaseModel):
+    """Validation state response schema."""
+    dossier_id: UUID
+    fields: list[ExtractedFieldResponse]
+    rules: list[ValidationRuleResult]
+    confidence_score: Optional[float] = None
+    status: str

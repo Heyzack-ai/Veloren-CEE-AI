@@ -14,8 +14,8 @@ router = APIRouter(prefix="/api/dossiers", tags=["validation"])
 @router.get("/{dossier_id}/validation")
 async def get_validation_state(
     dossier_id: UUID,
-    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR, UserRole.ADMINISTRATOR]))] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None
+    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR, UserRole.ADMINISTRATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Get validation state."""
     # TODO: Implement validation state retrieval
@@ -25,8 +25,8 @@ async def get_validation_state(
 @router.get("/{dossier_id}/fields")
 async def get_extracted_fields(
     dossier_id: UUID,
-    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR, UserRole.ADMINISTRATOR]))] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None
+    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR, UserRole.ADMINISTRATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Get extracted fields."""
     # TODO: Implement extracted fields retrieval
@@ -38,8 +38,8 @@ async def update_field(
     dossier_id: UUID,
     field_id: UUID,
     field_data: dict,
-    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None
+    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Update field value."""
     # TODO: Implement field update
@@ -50,8 +50,8 @@ async def update_field(
 async def confirm_field(
     dossier_id: UUID,
     field_id: UUID,
-    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None
+    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Confirm field."""
     # TODO: Implement field confirmation
@@ -61,8 +61,8 @@ async def confirm_field(
 @router.post("/{dossier_id}/approve")
 async def approve_dossier(
     dossier_id: UUID,
-    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None
+    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Approve dossier."""
     # TODO: Implement dossier approval
@@ -72,8 +72,8 @@ async def approve_dossier(
 @router.post("/{dossier_id}/reject")
 async def reject_dossier(
     dossier_id: UUID,
-    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None
+    current_user: Annotated[User, Depends(require_role([UserRole.VALIDATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Reject dossier."""
     # TODO: Implement dossier rejection

@@ -17,7 +17,7 @@ class ActivityLog(Base):
     entity_id = Column(UUID(as_uuid=True), nullable=True)
     entity_reference = Column(String(100), nullable=True)
     description = Column(Text, nullable=True)
-    metadata = Column(JSON, default=dict, nullable=False)
+    meta_data = Column("metadata", JSON, default=dict, nullable=False)  # Column name in DB is "metadata"
     ip_address = Column(INET, nullable=True)
     user_agent = Column(Text, nullable=True)
     duration_ms = Column(Integer, nullable=True)
