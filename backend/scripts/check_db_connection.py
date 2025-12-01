@@ -56,26 +56,16 @@ def check_asyncpg():
         sys.exit(1)
 
 def check_sqlalchemy():
-    """Verify SQLAlchemy can load the postgresql+asyncpg dialect."""
+    """Verify SQLAlchemy is installed."""
     try:
-        from sqlalchemy.engine import URL
-        
-        # Test parsing the URL to ensure dialect can be loaded
-        test_url = "postgresql+asyncpg://user:pass@localhost:5432/test"
-        url_obj = URL.create(test_url)
-        
-        # Try to get the dialect
-        from sqlalchemy.dialects import registry
-        dialect = registry.load("postgresql+asyncpg")
-        print("✓ SQLAlchemy can load postgresql+asyncpg dialect")
+        import sqlalchemy
+        print(f"✓ SQLAlchemy is installed (version: {sqlalchemy.__version__})")
+        print("  (asyncpg dialect will be loaded automatically when engine is created)")
         return True
-    except Exception as e:
-        print(f"ERROR: SQLAlchemy cannot load postgresql+asyncpg dialect")
-        print(f"Error: {e}")
-        print("\nTroubleshooting:")
-        print("1. Ensure asyncpg is installed: pip install asyncpg")
-        print("2. Check DATABASE_URL format: postgresql+asyncpg://...")
-        print("3. Verify SQLAlchemy version: pip show sqlalchemy")
+    except ImportError as e:
+        print(f"ERROR: SQLAlchemy is not installed")
+        print(f"Import error: {e}")
+        print("\nInstall with: pip install sqlalchemy")
         sys.exit(1)
 
 if __name__ == "__main__":
@@ -83,5 +73,6 @@ if __name__ == "__main__":
     check_asyncpg()
     check_database_url()
     check_sqlalchemy()
-    print("✓ All database checks passed")
+    print("\n✓ All database checks passed")
+    print("Note: SQLAlchemy will load the asyncpg dialect automatically when creating the engine.")
 

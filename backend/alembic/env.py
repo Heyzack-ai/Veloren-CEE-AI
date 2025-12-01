@@ -6,13 +6,15 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 import os
 
-# Import your models and Base
-from app.core.database import Base
+# Import Base without triggering engine creation
+# We need to import models first to ensure they're registered with Base
 from app.models import (
     User, Installer, Process, Dossier, Document, DocumentType,
     ExtractedField, FieldSchema, ValidationRule, ValidationResult,
     HumanFeedback, Invoice, ActivityLog, AIConfiguration, ModelPerformanceMetrics
 )
+# Import Base after models are loaded
+from app.core.database import Base
 
 # this is the Alembic Config object
 config = context.config
