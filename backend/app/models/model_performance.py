@@ -18,6 +18,6 @@ class ModelPerformanceMetrics(Base):
     metric_value = Column(Numeric(8, 6), nullable=False)
     sample_size = Column(Integer, nullable=True)
     evaluation_date = Column(Date, nullable=False)
-    metadata = Column(JSON, default=dict, nullable=False)
+    meta_data = Column("metadata", JSON, default=dict, nullable=False)  # Column name in DB is "metadata"
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

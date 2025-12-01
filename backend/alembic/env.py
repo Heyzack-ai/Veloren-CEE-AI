@@ -9,8 +9,9 @@ import os
 # Import your models and Base
 from app.core.database import Base
 from app.models import (
-    User, DocumentType, Schema, Rule, Submission,
-    SubmissionFile, ExtractedData, RuleResult, AuditLog
+    User, Installer, Process, Dossier, Document, DocumentType,
+    ExtractedField, FieldSchema, ValidationRule, ValidationResult,
+    HumanFeedback, Invoice, ActivityLog, AIConfiguration, ModelPerformanceMetrics
 )
 
 # this is the Alembic Config object
