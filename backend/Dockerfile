@@ -65,5 +65,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Start server with entrypoint script (runs migrations automatically)
-CMD ["/app/scripts/entrypoint.sh"]
+# Using bash explicitly to ensure script runs correctly
+CMD ["/bin/bash", "/app/scripts/entrypoint.sh"]
 
