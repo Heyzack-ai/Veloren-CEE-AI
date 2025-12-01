@@ -90,10 +90,12 @@ cp .env.example .env
 
 6. **Update the `.env` file with your configuration:**
 
-**Database:**
+**Database (IMPORTANT: Must use `postgresql+asyncpg://` format):**
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/pdf_checker
 ```
+
+**⚠️ Critical:** The DATABASE_URL must use `postgresql+asyncpg://` (not just `postgresql://`) for async support. This is required for the async SQLAlchemy engine.
 
 **JWT:**
 ```env

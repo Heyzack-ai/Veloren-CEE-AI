@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Final stage
 FROM python:3.11-slim
@@ -22,27 +23,33 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install runtime dependencies
+# Install system dependencies (including build tools for asyncpg)
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    libpq5 \
+    libpq-dev \
+    gcc \
+    g++ \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy application code first
+COPY --chown=root:root . .
+
+# Install Python dependencies (system-wide, accessible to all users)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    python -c "import asyncpg; print('✓ asyncpg installed:', asyncpg.__version__)" && \
+    python -c "import sqlalchemy; print('✓ SQLAlchemy version:', sqlalchemy.__version__)"
+
 # Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /home/appuser/.local
-
-# Copy application code
-COPY --chown=appuser:appuser . .
-
-# Set PATH to include user's local bin
-ENV PATH=/home/appuser/.local/bin:$PATH
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
 # Set Python environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app
 
 # Switch to non-root user
 USER appuser
@@ -54,6 +61,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run migrations and start server
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"]
+# Run database checks, migrations and start server
+CMD ["sh", "-c", "python scripts/check_db_connection.py && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"]
 
