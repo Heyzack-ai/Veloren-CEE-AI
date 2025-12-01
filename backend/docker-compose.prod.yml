@@ -32,8 +32,6 @@ services:
     env_file:
       - .env
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_started
     restart: unless-stopped
@@ -45,24 +43,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: cee_validation_postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-cee_validation}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks:
-      - cee_validation_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -97,7 +77,6 @@ services:
       retries: 3
 
 volumes:
-  postgres_data:
   redis_data:
   typesense_data:
 
