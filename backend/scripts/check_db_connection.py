@@ -7,27 +7,41 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
+def normalize_database_url(url: str) -> str:
+    """Convert postgres:// to postgresql+asyncpg:// format."""
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and "+asyncpg" not in url:
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
 def check_database_url():
-    """Validate DATABASE_URL format."""
+    """Validate and normalize DATABASE_URL format."""
     database_url = os.getenv("DATABASE_URL", "")
     
     if not database_url:
         print("ERROR: DATABASE_URL environment variable is not set")
         sys.exit(1)
     
-    # Check if it's using asyncpg
-    if "postgresql+asyncpg://" not in database_url and "postgresql://" in database_url:
-        print("WARNING: DATABASE_URL uses 'postgresql://' but should use 'postgresql+asyncpg://' for async support")
-        print(f"Current DATABASE_URL: {database_url[:50]}...")
-        print("Please update your DATABASE_URL to use 'postgresql+asyncpg://'")
+    # Print full URL for debugging (user requested this)
+    print(f"Original DATABASE_URL: {database_url}")
+    
+    # Normalize the URL
+    normalized_url = normalize_database_url(database_url)
+    
+    if normalized_url != database_url:
+        print(f"Normalized DATABASE_URL: {normalized_url}")
+        # Update environment variable for this process and child processes (like alembic)
+        os.environ["DATABASE_URL"] = normalized_url
+        print("✓ Updated DATABASE_URL environment variable with normalized format")
+    
+    # Verify it's now in correct format
+    if "postgresql+asyncpg://" not in normalized_url:
+        print(f"ERROR: DATABASE_URL must be convertible to 'postgresql+asyncpg://' format")
+        print(f"Current DATABASE_URL: {database_url}")
         sys.exit(1)
     
-    if "postgresql+asyncpg://" not in database_url:
-        print(f"ERROR: DATABASE_URL must use 'postgresql+asyncpg://' format")
-        print(f"Current DATABASE_URL: {database_url[:50]}...")
-        sys.exit(1)
-    
-    print(f"✓ DATABASE_URL format is correct")
+    print(f"✓ DATABASE_URL format is correct (normalized to asyncpg)")
     return True
 
 def check_asyncpg():

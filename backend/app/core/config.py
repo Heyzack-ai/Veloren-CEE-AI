@@ -1,13 +1,34 @@
 """Application configuration settings."""
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import Optional
+import os
+
+
+def normalize_database_url(url: str) -> str:
+    """Convert postgres:// to postgresql+asyncpg:// format."""
+    if url.startswith("postgres://"):
+        # Replace postgres:// with postgresql+asyncpg://
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and "+asyncpg" not in url:
+        # Replace postgresql:// with postgresql+asyncpg://
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
 
 
 class Settings(BaseSettings):
     """Application settings."""
     
-    # Database
+    # Database - automatically converts postgres:// to postgresql+asyncpg://
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/pdf_checker"
+    
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_db_url(cls, v: str) -> str:
+        """Normalize database URL to use asyncpg driver."""
+        if isinstance(v, str):
+            return normalize_database_url(v)
+        return v
     
     # Redis (for caching and state management)
     REDIS_URL: str = "redis://localhost:6379"

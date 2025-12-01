@@ -32,12 +32,22 @@ if config.config_file_name is not None:
 from pathlib import Path
 from dotenv import load_dotenv
 
+def normalize_database_url(url: str) -> str:
+    """Convert postgres:// to postgresql+asyncpg:// format."""
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and "+asyncpg" not in url:
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
 env_path = Path(__file__).parent.parent / ".env"
 if env_path.exists():
     load_dotenv(env_path)
 
 database_url = os.getenv("DATABASE_URL")
 if database_url:
+    # Normalize the URL to use asyncpg
+    database_url = normalize_database_url(database_url)
     config.set_main_option("sqlalchemy.url", database_url)
 
 # add your model's MetaData object here for 'autogenerate' support
