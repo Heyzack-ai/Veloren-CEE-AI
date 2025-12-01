@@ -34,7 +34,7 @@ class ActivityLogger:
             entity_id=entity_id,
             entity_reference=entity_reference,
             description=description,
-            metadata=metadata or {},
+            meta_data=metadata or {},
             ip_address=ip_address,
             user_agent=user_agent,
             duration_ms=duration_ms

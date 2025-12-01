@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     """Application settings."""
     
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/cee_validation"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/pdf_checker"
     
     # Redis (for caching and state management)
     REDIS_URL: str = "redis://localhost:6379"
