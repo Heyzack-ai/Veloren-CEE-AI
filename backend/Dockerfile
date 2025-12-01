@@ -42,6 +42,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
     python -c "import asyncpg; print('✓ asyncpg installed:', asyncpg.__version__)" && \
     python -c "import sqlalchemy; print('✓ SQLAlchemy version:', sqlalchemy.__version__)"
 
+# Make entrypoint script executable
+RUN chmod +x /app/scripts/entrypoint.sh
+
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
@@ -61,6 +64,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Start server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Start server with entrypoint script (runs migrations automatically)
+CMD ["/app/scripts/entrypoint.sh"]
 

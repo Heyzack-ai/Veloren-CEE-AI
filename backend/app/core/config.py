@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     """Application settings."""
     
     # Database - automatically converts postgres:// to postgresql+asyncpg://
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/pdf_checker"
+    DATABASE_URL: str 
     
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
