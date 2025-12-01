@@ -46,10 +46,10 @@ async def create_user(
 
 @router.get("", response_model=list[UserResponse])
 async def list_users(
-    role: Optional[UserRole] = Query(None),
-    active: Optional[bool] = Query(None),
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    role: Optional[UserRole] = Query(None),
+    active: Optional[bool] = Query(None)
 ):
     """List users."""
     query = select(User)

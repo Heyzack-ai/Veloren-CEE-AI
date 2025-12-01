@@ -30,10 +30,10 @@ async def create_schema(
 
 @router.get("")
 async def list_schemas(
-    document_type_id: Optional[UUID] = Query(None),
-    is_active: Optional[bool] = Query(None),
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    document_type_id: Optional[UUID] = Query(None),
+    is_active: Optional[bool] = Query(None)
 ):
     """List field schemas."""
     query = select(FieldSchema)

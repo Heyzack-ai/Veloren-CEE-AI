@@ -82,14 +82,14 @@ async def create_dossier(
 
 @router.get("", response_model=DossierListResponse)
 async def list_dossiers(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     status: Optional[DossierStatus] = Query(None),
     installer_id: Optional[UUID] = Query(None),
     process_id: Optional[UUID] = Query(None),
-    assigned_validator_id: Optional[UUID] = Query(None),
-    current_user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    assigned_validator_id: Optional[UUID] = Query(None)
 ):
     """List dossiers with filters."""
     query = select(Dossier)

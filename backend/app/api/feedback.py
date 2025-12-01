@@ -31,13 +31,13 @@ async def submit_feedback(
 
 @router.get("")
 async def list_feedback(
+    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)],
     dossier_id: Optional[UUID] = Query(None),
     feedback_type: Optional[str] = Query(None),
     used_for_training: Optional[bool] = Query(None),
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=100),
-    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    limit: int = Query(50, ge=1, le=100)
 ):
     """List feedback entries."""
     query = select(HumanFeedback)
@@ -126,12 +126,12 @@ async def get_feedback_stats(
 
 @router.post("/export")
 async def export_training_data(
+    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)],
     feedback_type: Optional[str] = None,
     field_name: Optional[str] = None,
     date_from: Optional[datetime] = None,
-    date_to: Optional[datetime] = None,
-    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    date_to: Optional[datetime] = None
 ):
     """Export training dataset."""
     # TODO: Implement training dataset export

@@ -1,6 +1,6 @@
 """Analytics schemas."""
 from datetime import datetime
-from typing import Optional, dict
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -25,7 +25,10 @@ class PerformanceMetrics(BaseModel):
     """Performance metrics schema."""
     avg_validation_time: float
     dossiers_per_validator: dict[str, int]
-    model_accuracy: dict[str, float]
+    ai_model_accuracy: dict[str, float]  # Renamed to avoid Pydantic protected namespace
+    
+    class Config:
+        protected_namespaces = ()
 
 
 class DashboardMetrics(BaseModel):

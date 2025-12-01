@@ -15,6 +15,8 @@ router = APIRouter(prefix="/api/activity", tags=["activity"])
 
 @router.get("")
 async def list_activities(
+    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
+    db: Annotated[AsyncSession, Depends(get_db)],
     user_id: Optional[UUID] = Query(None),
     entity_type: Optional[str] = Query(None),
     entity_id: Optional[UUID] = Query(None),
@@ -22,9 +24,7 @@ async def list_activities(
     date_from: Optional[datetime] = Query(None),
     date_to: Optional[datetime] = Query(None),
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=100),
-    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    limit: int = Query(50, ge=1, le=100)
 ):
     """List activity logs."""
     logger = ActivityLogger(db)

@@ -2,7 +2,7 @@
 from typing import Any, Optional
 from pydantic import BaseModel
 
-from .typesense_client import get_typesense_client
+from .typesense_client import get_typesense_client, TYPESENSE_AVAILABLE
 
 
 class SearchResult(BaseModel):
@@ -24,7 +24,13 @@ class SearchService:
     """Service for Typesense search operations."""
 
     def __init__(self):
-        self.client = get_typesense_client()
+        if TYPESENSE_AVAILABLE:
+            try:
+                self.client = get_typesense_client()
+            except Exception:
+                self.client = None
+        else:
+            self.client = None
 
     async def search_dossiers(
         self,
@@ -34,6 +40,10 @@ class SearchService:
         per_page: int = 20
     ) -> SearchResult:
         """Search dossiers collection."""
+        if not self.client:
+            # Return empty result if Typesense is not available
+            return SearchResult(hits=[], total=0, page=page, total_pages=0)
+        
         filter_by = self._build_filter_string(filters) if filters else ""
 
         try:

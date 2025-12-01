@@ -41,10 +41,10 @@ async def create_installer(
 
 @router.get("", response_model=list[InstallerResponse])
 async def list_installers(
-    active: Optional[bool] = Query(None),
-    city: Optional[str] = Query(None),
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    active: Optional[bool] = Query(None),
+    city: Optional[str] = Query(None)
 ):
     """List installers."""
     query = select(Installer)

@@ -41,10 +41,10 @@ async def create_process(
 
 @router.get("", response_model=list[ProcessResponse])
 async def list_processes(
-    is_active: Optional[bool] = Query(None),
-    category: Optional[str] = Query(None),
     current_user: Annotated[User, Depends(get_current_user)],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    is_active: Optional[bool] = Query(None),
+    category: Optional[str] = Query(None)
 ):
     """List processes."""
     query = select(Process)

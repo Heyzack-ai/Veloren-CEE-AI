@@ -18,10 +18,10 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 @router.get("/dashboard", response_model=DashboardMetrics)
 async def get_dashboard_metrics(
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
     current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR, UserRole.VALIDATOR]))],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None)
 ):
     """Get dashboard metrics."""
     # Dossier metrics
@@ -93,7 +93,7 @@ async def get_dashboard_metrics(
     performance_metrics = PerformanceMetrics(
         avg_validation_time=avg_validation_time,
         dossiers_per_validator=validator_counts,
-        model_accuracy={}  # TODO: Calculate from model performance metrics
+        ai_model_accuracy={}  # TODO: Calculate from model performance metrics
     )
     
     return DashboardMetrics(

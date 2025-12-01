@@ -22,7 +22,7 @@ async def init_db():
         # Check if admin user exists
         from sqlalchemy import select
         result = await session.execute(
-            select(User).where(User.username == "admin")
+            select(User).where(User.email == "admin@example.com")
         )
         admin_user = result.scalar_one_or_none()
         
@@ -33,15 +33,14 @@ async def init_db():
         # Create admin user
         admin_user = User(
             email="admin@example.com",
-            username="admin",
-            hashed_password=get_password_hash("admin123"),
-            role=UserRole.ADMIN,
-            is_active=True
+            password_hash=get_password_hash("admin123"),
+            role=UserRole.ADMINISTRATOR,
+            active=True
         )
         session.add(admin_user)
         await session.commit()
         print("Admin user created successfully!")
-        print("Username: admin")
+        print("Email: admin@example.com")
         print("Password: admin123")
         print("Please change the password after first login!")
 
