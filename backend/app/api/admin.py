@@ -10,7 +10,7 @@ from app.models.document_type import DocumentType
 from app.models.schema import Schema
 from app.models.rule import Rule
 from app.models.submission import Submission, SubmissionStatus
-from app.models.audit_log import AuditLog
+from app.models.activity_log import ActivityLog
 from app.schemas.auth import UserCreate, UserResponse
 from app.schemas.document_type import DocumentTypeCreate, DocumentTypeUpdate, DocumentTypeResponse
 from app.schemas.schema import SchemaCreate, SchemaUpdate, SchemaResponse
@@ -379,19 +379,19 @@ async def get_system_report(
     )
     submissions_by_document_type = {name: count for name, count in doc_type_result.all()}
     
-    # Recent activity (last 10 audit logs)
+    # Recent activity (last 10 activity logs)
     recent_activity_result = await db.execute(
-        select(AuditLog)
-        .order_by(AuditLog.created_at.desc())
+        select(ActivityLog)
+        .order_by(ActivityLog.created_at.desc())
         .limit(10)
     )
     recent_activity = [
         {
             "id": log.id,
             "user_id": log.user_id,
-            "action": log.action,
-            "resource_type": log.resource_type,
-            "resource_id": log.resource_id,
+            "action": log.action_type,
+            "resource_type": log.entity_type,
+            "resource_id": log.entity_id,
             "created_at": log.created_at.isoformat() if log.created_at else None
         }
         for log in recent_activity_result.scalars().all()
