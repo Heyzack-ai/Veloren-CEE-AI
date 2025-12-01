@@ -1,0 +1,2 @@
+"""PDF Checker Backend Application."""
+
