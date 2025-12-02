@@ -1,34 +1,14 @@
 """Application configuration settings."""
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
 from typing import Optional
-import os
-
-
-def normalize_database_url(url: str) -> str:
-    """Convert postgres:// to postgresql+asyncpg:// format."""
-    if url.startswith("postgres://"):
-        # Replace postgres:// with postgresql+asyncpg://
-        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-    elif url.startswith("postgresql://") and "+asyncpg" not in url:
-        # Replace postgresql:// with postgresql+asyncpg://
-        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    return url
 
 
 class Settings(BaseSettings):
     """Application settings."""
     
-    # Database - automatically converts postgres:// to postgresql+asyncpg://
-    DATABASE_URL: str 
-    
-    @field_validator("DATABASE_URL", mode="before")
-    @classmethod
-    def normalize_db_url(cls, v: str) -> str:
-        """Normalize database URL to use asyncpg driver."""
-        if isinstance(v, str):
-            return normalize_database_url(v)
-        return v
+    # Database - DATABASE_URL must be set as environment variable
+    # Format: postgresql+asyncpg://user:password@host:port/database
+    DATABASE_URL: str
     
     # Redis (for caching and state management)
     REDIS_URL: str = "redis://localhost:6379"
@@ -77,8 +57,13 @@ class Settings(BaseSettings):
     MAX_PAGE_SIZE: int = 100
     
     class Config:
+        # Prioritize environment variables over .env file
+        # Environment variables take precedence by default in Pydantic Settings
         env_file = ".env"
+        env_file_encoding = "utf-8"
         case_sensitive = True
+        # Ensure environment variables are checked first
+        env_ignore_empty = True
 
 
 settings = Settings()

@@ -1,4 +1,5 @@
 """FastAPI application main entry point."""
+import os
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -77,12 +78,17 @@ app.include_router(ai_config.router)
 @app.on_event("startup")
 async def startup_event():
     """Log application startup information."""
+    # Get DATABASE_URL directly from environment variable (not from .env file)
+    env_db_url = os.environ.get("DATABASE_URL", "NOT SET IN ENVIRONMENT")
+    settings_db_url = settings.DATABASE_URL
+    
     # Use both print and logger to ensure it shows in all environments
     startup_msg = f"""
 {'=' * 80}
 CEE Validation System API - Starting up
 {'=' * 80}
-Database URL: {settings.DATABASE_URL}
+DATABASE_URL from environment: {env_db_url}
+DATABASE_URL from settings: {settings_db_url}
 Environment: {settings.ENVIRONMENT}
 Debug Mode: {settings.DEBUG}
 {'=' * 80}
