@@ -1,4 +1,5 @@
 """Authentication endpoints."""
+import logging
 from typing import Annotated
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,6 +14,8 @@ from app.models.user import User, UserRole
 from app.schemas.auth import Token, UserCreate, UserResponse
 from app.services.audit import audit_service
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
@@ -22,6 +25,9 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Login endpoint."""
+    # Log database connection information
+    logger.info(f"Login attempt - Database URL: {settings.DATABASE_URL}")
+    
     # Find user by email (username field in OAuth2PasswordRequestForm can be email)
     result = await db.execute(
         select(User).where(User.email == form_data.username)
