@@ -25,9 +25,6 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_db)]
 ):
     """Login endpoint."""
-    # Log database connection information
-    logger.info(f"Login attempt - Database URL: {settings.DATABASE_URL}")
-    
     # Find user by email (username field in OAuth2PasswordRequestForm can be email)
     result = await db.execute(
         select(User).where(User.email == form_data.username)

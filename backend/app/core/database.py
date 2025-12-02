@@ -19,37 +19,31 @@ except ImportError:
 def validate_database_url(url: str) -> str:
     """Validate and ensure DATABASE_URL has the correct format for asyncpg."""
     if not url:
-        logger.error("DATABASE_URL is not set in environment variables")
+        logger.error("DATABASE_URL is not set")
         raise ValueError("DATABASE_URL is not set")
-    
-    logger.info(f"Validating DATABASE_URL format. URL starts with: {url[:30]}...")
     
     # Check if URL needs asyncpg driver
     if url.startswith("postgres://"):
         error_msg = (
             f"DATABASE_URL uses 'postgres://' which is not supported. "
-            f"Please use 'postgresql+asyncpg://' format. "
-            f"Current URL: {url}"
+            f"Please use 'postgresql+asyncpg://' format."
         )
         logger.error(error_msg)
         raise ValueError(error_msg)
     elif url.startswith("postgresql://") and "+asyncpg" not in url:
         error_msg = (
             f"DATABASE_URL must include '+asyncpg' driver. "
-            f"Please use 'postgresql+asyncpg://' format. "
-            f"Current URL: {url}"
+            f"Please use 'postgresql+asyncpg://' format."
         )
         logger.error(error_msg)
         raise ValueError(error_msg)
     elif not url.startswith("postgresql+asyncpg://"):
         error_msg = (
-            f"DATABASE_URL must start with 'postgresql+asyncpg://'. "
-            f"Current URL format: {url}"
+            f"DATABASE_URL must start with 'postgresql+asyncpg://'."
         )
         logger.error(error_msg)
         raise ValueError(error_msg)
     
-    logger.info("DATABASE_URL format is valid")
     return url
 
 # Lazy engine creation - only create when needed
@@ -61,14 +55,12 @@ def get_engine() -> AsyncEngine:
     """Get or create the async engine."""
     global _engine
     if _engine is None:
-        # Get DATABASE_URL from settings (which reads from environment)
+        # Get DATABASE_URL from settings
         db_url = settings.DATABASE_URL
         
         # Validate DATABASE_URL format BEFORE passing to SQLAlchemy
         # This prevents SQLAlchemy from trying to parse invalid URLs
         db_url = validate_database_url(db_url)
-        
-        logger.info(f"Creating database engine with URL: {db_url[:50]}...")
         
         try:
             _engine = create_async_engine(
@@ -78,7 +70,6 @@ def get_engine() -> AsyncEngine:
             )
         except Exception as e:
             logger.error(f"Failed to create database engine: {e}")
-            logger.error(f"DATABASE_URL being used: {db_url[:100]}...")
             raise ValueError(
                 f"Failed to create database engine. "
                 f"Please ensure DATABASE_URL is in format: postgresql+asyncpg://user:password@host:port/database. "
