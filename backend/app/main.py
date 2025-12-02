@@ -16,6 +16,8 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
     title="CEE Validation System API",
     description="CEE (Certificat d'Économie d'Énergie) Document Validation System",
@@ -70,6 +72,18 @@ app.include_router(rules.router)
 app.include_router(schemas.router)
 app.include_router(feedback.router)
 app.include_router(ai_config.router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Log application startup information."""
+    logger.info("=" * 80)
+    logger.info("CEE Validation System API - Starting up")
+    logger.info("=" * 80)
+    logger.info(f"Database URL: {settings.DATABASE_URL}")
+    logger.info(f"Environment: {settings.ENVIRONMENT}")
+    logger.info(f"Debug Mode: {settings.DEBUG}")
+    logger.info("=" * 80)
 
 
 @app.get("/")
