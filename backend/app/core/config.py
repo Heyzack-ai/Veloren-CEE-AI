@@ -1,14 +1,44 @@
 """Application configuration settings."""
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import Optional
 
 
 class Settings(BaseSettings):
     """Application settings."""
     
-    # Database - DATABASE_URL must be set as environment variable
+    # Database - DATABASE_URL (hardcoded default, can be overridden by environment variable)
     # Format: postgresql+asyncpg://user:password@host:port/database
-    DATABASE_URL: str
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@15.237.138.96:5432/postgres"
+    
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        """Validate DATABASE_URL format when it's loaded from environment."""
+        if not v:
+            raise ValueError("DATABASE_URL environment variable is not set")
+        
+        # Check format - must use postgresql+asyncpg://
+        if v.startswith("postgres://"):
+            raise ValueError(
+                f"DATABASE_URL uses 'postgres://' which is not supported. "
+                f"Please use 'postgresql+asyncpg://' format. "
+                f"Example: postgresql+asyncpg://user:password@host:port/database"
+            )
+        elif v.startswith("postgresql://") and "+asyncpg" not in v:
+            raise ValueError(
+                f"DATABASE_URL must include '+asyncpg' driver. "
+                f"Please use 'postgresql+asyncpg://' format. "
+                f"Example: postgresql+asyncpg://user:password@host:port/database"
+            )
+        elif not v.startswith("postgresql+asyncpg://"):
+            raise ValueError(
+                f"DATABASE_URL must start with 'postgresql+asyncpg://'. "
+                f"Current format: {v[:50]}... "
+                f"Example: postgresql+asyncpg://user:password@host:port/database"
+            )
+        
+        return v
     
     # Redis (for caching and state management)
     REDIS_URL: str = "redis://localhost:6379"
