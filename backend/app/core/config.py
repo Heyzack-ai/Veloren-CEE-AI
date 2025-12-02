@@ -1,44 +1,26 @@
 """Application configuration settings."""
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
-from typing import Optional
+from pydantic import model_validator
+from typing import Optional, Any
+
+# Hardcoded production database URL - environment variables are ignored
+PRODUCTION_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@15.237.138.96:5432/postgres"
 
 
 class Settings(BaseSettings):
     """Application settings."""
     
-    # Database - DATABASE_URL (hardcoded default, can be overridden by environment variable)
-    # Format: postgresql+asyncpg://user:password@host:port/database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@15.237.138.96:5432/postgres"
+    # Database - DATABASE_URL is hardcoded to production, environment variables are ignored
+    DATABASE_URL: str = PRODUCTION_DATABASE_URL
     
-    @field_validator("DATABASE_URL")
+    @model_validator(mode='before')
     @classmethod
-    def validate_database_url(cls, v: str) -> str:
-        """Validate DATABASE_URL format when it's loaded from environment."""
-        if not v:
-            raise ValueError("DATABASE_URL environment variable is not set")
-        
-        # Check format - must use postgresql+asyncpg://
-        if v.startswith("postgres://"):
-            raise ValueError(
-                f"DATABASE_URL uses 'postgres://' which is not supported. "
-                f"Please use 'postgresql+asyncpg://' format. "
-                f"Example: postgresql+asyncpg://user:password@host:port/database"
-            )
-        elif v.startswith("postgresql://") and "+asyncpg" not in v:
-            raise ValueError(
-                f"DATABASE_URL must include '+asyncpg' driver. "
-                f"Please use 'postgresql+asyncpg://' format. "
-                f"Example: postgresql+asyncpg://user:password@host:port/database"
-            )
-        elif not v.startswith("postgresql+asyncpg://"):
-            raise ValueError(
-                f"DATABASE_URL must start with 'postgresql+asyncpg://'. "
-                f"Current format: {v[:50]}... "
-                f"Example: postgresql+asyncpg://user:password@host:port/database"
-            )
-        
-        return v
+    def force_production_database_url(cls, data: Any) -> Any:
+        """Force DATABASE_URL to use hardcoded production value, ignoring environment variables."""
+        if isinstance(data, dict):
+            # Always use the hardcoded production URL, ignore any env value
+            data['DATABASE_URL'] = PRODUCTION_DATABASE_URL
+        return data
     
     # Redis (for caching and state management)
     REDIS_URL: str = "redis://localhost:6379"
