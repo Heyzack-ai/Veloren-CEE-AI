@@ -12,7 +12,7 @@ import logging
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO if settings.DEBUG else logging.WARNING,
+    level=logging.INFO,  # Always use INFO level to see startup messages
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
@@ -77,13 +77,18 @@ app.include_router(ai_config.router)
 @app.on_event("startup")
 async def startup_event():
     """Log application startup information."""
-    logger.info("=" * 80)
-    logger.info("CEE Validation System API - Starting up")
-    logger.info("=" * 80)
-    logger.info(f"Database URL: {settings.DATABASE_URL}")
-    logger.info(f"Environment: {settings.ENVIRONMENT}")
-    logger.info(f"Debug Mode: {settings.DEBUG}")
-    logger.info("=" * 80)
+    # Use both print and logger to ensure it shows in all environments
+    startup_msg = f"""
+{'=' * 80}
+CEE Validation System API - Starting up
+{'=' * 80}
+Database URL: {settings.DATABASE_URL}
+Environment: {settings.ENVIRONMENT}
+Debug Mode: {settings.DEBUG}
+{'=' * 80}
+"""
+    print(startup_msg)  # Always print to stdout
+    logger.info(startup_msg.strip())  # Also log it
 
 
 @app.get("/")
