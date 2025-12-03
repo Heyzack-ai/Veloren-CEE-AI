@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, AuthSession } from '@/types/user';
-import { mockLogin, mockLogout, getStoredSession } from './mock-auth';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { User, AuthSession } from "@/types/user";
+import { apiLogin, apiLogout, getStoredSession, fetchCurrentUser } from "./auth-api";
 
 type AuthContextType = {
   user: User | null;
@@ -18,22 +18,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load stored session and validate with /api/auth/me
   useEffect(() => {
-    // Check for stored session on mount
-    const storedSession = getStoredSession();
-    if (storedSession) {
-      setSession(storedSession);
+    async function init() {
+      const stored = getStoredSession();
+      if (stored) {
+        setSession(stored);
+        const validated = await fetchCurrentUser();
+        if (validated) setSession(validated);
+        // If validation fails, keep the stored session to avoid logout on refresh
+      }
+
+      setIsLoading(false);
     }
-    setIsLoading(false);
+
+    init();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const newSession = await mockLogin(email, password);
+    const newSession = await apiLogin(email, password);
     setSession(newSession);
   };
 
   const logout = () => {
-    mockLogout();
+    apiLogout();
     setSession(null);
   };
 
@@ -54,8 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

@@ -1,10 +1,10 @@
-/** @type {import('next').NextConfig} */
+// next.config.js
+const upstream = (process.env.VITE_AUTH_URL || process.env.NEXT_PUBLIC_AUTH_URL || 'https://veloren-dev.heyzack.ai').replace(/\/$/, '');
+
 const nextConfig = {
-  webpack: (config) => {
-    // Fix for react-pdf and pdfjs-dist
-    config.resolve.alias.canvas = false;
-    
-    return config;
+  // your other config...
+  async rewrites() {
+    return [];
   },
 };
 

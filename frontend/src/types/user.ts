@@ -15,3 +15,24 @@ export type AuthSession = {
   token: string;
   expiresAt: Date;
 };
+
+export type CreateUserRequest = {
+  email: string;
+  password: string;
+  name: string;
+  role: UserRole;
+  active: boolean;
+};
+
+export type ApiUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  active: boolean;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateUserResponse = ApiUser;
