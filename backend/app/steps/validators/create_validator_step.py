@@ -22,6 +22,17 @@ config = {
         "certifications": {"type": "array"},
         "max_concurrent_dossiers": {"type": "string"},
         "notes": {"type": "string"}
+    },
+    "responseSchema": {
+        "user_id": {"type": "string", "format": "uuid"},
+        "user_email": {"type": "string", "format": "email"},
+        "user_name": {"type": "string"},
+        "validator_id": {"type": "string", "format": "uuid"},
+        "employee_id": {"type": "string"},
+        "department": {"type": "string"},
+        "specialization": {"type": "string"},
+        "active": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"}
     }
 }
 

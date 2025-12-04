@@ -11,6 +11,9 @@ config = {
     "bodySchema": {
         "current_password": {"type": "string"},
         "new_password": {"type": "string", "minLength": 8}
+    },
+    "responseSchema": {
+        "detail": {"type": "string"}
     }
 }
 

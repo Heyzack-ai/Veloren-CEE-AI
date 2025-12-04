@@ -16,7 +16,37 @@ config = {
     "name": "GetValidationState",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/validation",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "dossier_id": {"type": "string", "format": "uuid"},
+        "status": {"type": "string"},
+        "rules": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "code": {"type": "string"},
+                    "name": {"type": "string"},
+                    "passed": {"type": "boolean"},
+                    "status": {"type": "string"},
+                    "message": {"type": "string"}
+                }
+            }
+        },
+        "fields": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "field_name": {"type": "string"},
+                    "status": {"type": "string"},
+                    "confidence": {"type": "number"}
+                }
+            }
+        }
+    }
 }
 
 async def handler(req, context):

@@ -15,6 +15,17 @@ config = {
     "bodySchema": {
         "format": {"type": "string", "enum": ["json", "csv"]},
         "used_for_training_only": {"type": "boolean"}
+    },
+    "responseSchema": {
+        "data": {
+            "type": "array",
+            "items": {"type": "object"}
+        },
+        "total": {"type": "integer"},
+        "exported_at": {"type": "string", "format": "date-time"},
+        "file_content": {"type": "string", "format": "binary"},
+        "content_type": {"type": "string"},
+        "filename": {"type": "string"}
     }
 }
 

@@ -9,7 +9,30 @@ config = {
     "name": "ListValidators",
     "type": "api",
     "path": "/api/validators",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "user_id": {"type": "string", "format": "uuid"},
+                    "employee_id": {"type": "string"},
+                    "department": {"type": "string"},
+                    "specialization": {"type": "string"},
+                    "certifications": {"type": "array"},
+                    "max_concurrent_dossiers": {"type": "string"},
+                    "validation_stats": {"type": "object"},
+                    "active": {"type": "boolean"},
+                    "created_at": {"type": "string", "format": "date-time"}
+                }
+            }
+        },
+        "total": {"type": "integer"},
+        "skip": {"type": "integer"},
+        "limit": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

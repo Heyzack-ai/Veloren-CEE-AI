@@ -13,7 +13,17 @@ config = {
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/fields/{field_id}/confirm",
     "method": "POST",
-    "bodySchema": {}
+    "bodySchema": {},
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "field_name": {"type": "string"},
+        "display_name": {"type": "string"},
+        "extracted_value": {"type": "object"},
+        "corrected_value": {"type": "object"},
+        "status": {"type": "string"},
+        "confirmed_at": {"type": "string", "format": "date-time"},
+        "confirmed_by": {"type": "string", "format": "uuid"}
+    }
 }
 
 async def handler(req, context):

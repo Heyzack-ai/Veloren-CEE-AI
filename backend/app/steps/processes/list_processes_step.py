@@ -8,7 +8,21 @@ config = {
     "name": "ListProcesses",
     "type": "api",
     "path": "/api/processes",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string", "format": "uuid"},
+                "code": {"type": "string"},
+                "name": {"type": "string"},
+                "category": {"type": "string"},
+                "is_active": {"type": "boolean"},
+                "created_at": {"type": "string", "format": "date-time"}
+            }
+        }
+    }
 }
 
 async def handler(req, context):

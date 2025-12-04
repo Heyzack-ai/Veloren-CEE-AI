@@ -10,7 +10,15 @@ config = {
     "name": "GetRule",
     "type": "api",
     "path": "/api/rules/{rule_id}",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "rule_type": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"}
+    }
 }
 
 async def handler(req, context):

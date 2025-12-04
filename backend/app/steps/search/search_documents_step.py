@@ -7,7 +7,13 @@ config = {
     "name": "SearchDocuments",
     "type": "api",
     "path": "/api/search/documents",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "hits": {"type": "array", "items": {"type": "object"}},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "total_pages": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

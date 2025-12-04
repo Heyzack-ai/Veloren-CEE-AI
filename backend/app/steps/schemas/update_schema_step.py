@@ -21,6 +21,12 @@ config = {
         "default_value": {"type": "object"},
         "display_order": {"type": "integer"},
         "is_active": {"type": "boolean"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "field_name": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "updated_at": {"type": "string", "format": "date-time"}
     }
 }
 

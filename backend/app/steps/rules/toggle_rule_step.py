@@ -11,7 +11,13 @@ config = {
     "type": "api",
     "path": "/api/rules/{rule_id}/toggle",
     "method": "POST",
-    "bodySchema": {}
+    "bodySchema": {},
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "is_active": {"type": "boolean"}
+    }
 }
 
 async def handler(req, context):

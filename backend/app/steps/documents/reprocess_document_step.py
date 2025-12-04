@@ -12,7 +12,12 @@ config = {
     "type": "api",
     "path": "/api/documents/{document_id}/reprocess",
     "method": "POST",
-    "bodySchema": {}
+    "bodySchema": {},
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "filename": {"type": "string"},
+        "processing_status": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

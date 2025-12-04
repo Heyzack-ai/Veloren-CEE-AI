@@ -10,7 +10,8 @@ config = {
     "type": "api",
     "path": "/api/auth/logout",
     "method": "POST",
-    "bodySchema": {}
+    "bodySchema": {},
+    "responseSchema": {}
 }
 
 async def handler(req, context):

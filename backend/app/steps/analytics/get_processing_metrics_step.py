@@ -11,7 +11,30 @@ config = {
     "name": "GetProcessingMetrics",
     "type": "api",
     "path": "/api/analytics/processing",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "dossiers": {
+            "type": "object",
+            "properties": {
+                "total": {"type": "integer"},
+                "avg_processing_time_ms": {"type": "number"},
+                "min_processing_time_ms": {"type": "integer"},
+                "max_processing_time_ms": {"type": "integer"}
+            }
+        },
+        "documents": {
+            "type": "object",
+            "properties": {
+                "total": {"type": "integer"},
+                "pending": {"type": "integer"},
+                "processing": {"type": "integer"},
+                "completed": {"type": "integer"},
+                "failed": {"type": "integer"},
+                "avg_processing_time_ms": {"type": "number"},
+                "success_rate": {"type": "number"}
+            }
+        }
+    }
 }
 
 async def handler(req, context):

@@ -3,7 +3,13 @@ config = {
     "name": "Root",
     "type": "api",
     "path": "/",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "message": {"type": "string"},
+        "version": {"type": "string"},
+        "docs": {"type": "string"},
+        "health": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

@@ -21,6 +21,16 @@ config = {
         "parameters": {"type": "object"},
         "is_active": {"type": "boolean"},
         "priority": {"type": "integer"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "config_key": {"type": "string"},
+        "provider": {"type": "string"},
+        "model_name": {"type": "string"},
+        "model_version": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "priority": {"type": "integer"},
+        "updated_at": {"type": "string", "format": "date-time"}
     }
 }
 

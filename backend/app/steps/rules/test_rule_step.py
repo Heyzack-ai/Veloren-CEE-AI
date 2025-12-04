@@ -16,6 +16,14 @@ config = {
     "bodySchema": {
         "dossier_id": {"type": "string", "format": "uuid"},
         "test_data": {"type": "object"}
+    },
+    "responseSchema": {
+        "rule_id": {"type": "string", "format": "uuid"},
+        "rule_code": {"type": "string"},
+        "rule_name": {"type": "string"},
+        "passed": {"type": "boolean"},
+        "status": {"type": "string"},
+        "message": {"type": "string"}
     }
 }
 

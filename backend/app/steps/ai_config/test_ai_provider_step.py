@@ -13,6 +13,14 @@ config = {
     "method": "POST",
     "bodySchema": {
         "test_input": {"type": "string"}
+    },
+    "responseSchema": {
+        "success": {"type": "boolean"},
+        "message": {"type": "string"},
+        "provider": {"type": "string"},
+        "model": {"type": "string"},
+        "has_api_key": {"type": "boolean"},
+        "has_endpoint": {"type": "boolean"}
     }
 }
 

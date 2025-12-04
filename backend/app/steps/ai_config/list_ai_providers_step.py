@@ -9,7 +9,25 @@ config = {
     "name": "ListAIProviders",
     "type": "api",
     "path": "/api/ai/providers",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "providers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "total_configs": {"type": "integer"},
+                    "active_configs": {"type": "integer"},
+                    "configurations": {
+                        "type": "array",
+                        "items": {"type": "object"}
+                    }
+                }
+            }
+        },
+        "total": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

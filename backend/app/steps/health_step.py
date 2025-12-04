@@ -3,7 +3,11 @@ config = {
     "name": "HealthCheck",
     "type": "api",
     "path": "/health",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "status": {"type": "string"},
+        "version": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

@@ -9,7 +9,17 @@ config = {
     "name": "GetDocument",
     "type": "api",
     "path": "/api/documents/{document_id}",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "dossier_id": {"type": "string", "format": "uuid"},
+        "filename": {"type": "string"},
+        "original_filename": {"type": "string"},
+        "file_size": {"type": "integer"},
+        "mime_type": {"type": "string"},
+        "processing_status": {"type": "string"},
+        "uploaded_at": {"type": "string", "format": "date-time"}
+    }
 }
 
 async def handler(req, context):

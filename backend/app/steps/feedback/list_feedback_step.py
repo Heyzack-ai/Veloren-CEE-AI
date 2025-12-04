@@ -10,7 +10,24 @@ config = {
     "name": "ListFeedback",
     "type": "api",
     "path": "/api/feedback",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "feedback": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "validator_id": {"type": "string", "format": "uuid"},
+                    "feedback_type": {"type": "string"},
+                    "created_at": {"type": "string", "format": "date-time"}
+                }
+            }
+        },
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "limit": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

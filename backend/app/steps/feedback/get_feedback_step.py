@@ -10,7 +10,20 @@ config = {
     "name": "GetFeedback",
     "type": "api",
     "path": "/api/feedback/{feedback_id}",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "dossier_id": {"type": "string", "format": "uuid"},
+        "document_id": {"type": "string", "format": "uuid"},
+        "extracted_field_id": {"type": "string", "format": "uuid"},
+        "feedback_type": {"type": "string"},
+        "original_value": {"type": "string"},
+        "corrected_value": {"type": "string"},
+        "field_name": {"type": "string"},
+        "validator_id": {"type": "string", "format": "uuid"},
+        "used_for_training": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"}
+    }
 }
 
 async def handler(req, context):

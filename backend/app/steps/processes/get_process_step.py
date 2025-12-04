@@ -9,7 +9,16 @@ config = {
     "name": "GetProcess",
     "type": "api",
     "path": "/api/processes/{process_id}",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "category": {"type": "string"},
+        "description": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"}
+    }
 }
 
 async def handler(req, context):

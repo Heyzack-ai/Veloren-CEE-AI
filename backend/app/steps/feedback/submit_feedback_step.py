@@ -17,6 +17,12 @@ config = {
         "feedback_text": {"type": "string", "required": True},
         "suggested_value": {"type": "string"},
         "is_used_for_training": {"type": "boolean"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "validator_id": {"type": "string", "format": "uuid"},
+        "feedback_type": {"type": "string"},
+        "created_at": {"type": "string", "format": "date-time"}
     }
 }
 

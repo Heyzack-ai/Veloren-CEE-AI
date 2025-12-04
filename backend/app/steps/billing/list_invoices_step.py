@@ -10,7 +10,30 @@ config = {
     "name": "ListInvoices",
     "type": "api",
     "path": "/api/billing/invoices",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "invoice_number": {"type": "string"},
+                    "dossier_id": {"type": "string", "format": "uuid"},
+                    "installer_id": {"type": "string", "format": "uuid"},
+                    "status": {"type": "string"},
+                    "total_amount": {"type": "number"},
+                    "due_date": {"type": "string", "format": "date"},
+                    "paid_at": {"type": "string", "format": "date-time"},
+                    "created_at": {"type": "string", "format": "date-time"}
+                }
+            }
+        },
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "page_size": {"type": "integer"},
+        "total_pages": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

@@ -10,7 +10,13 @@ config = {
     "name": "GetExtractedFields",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/fields",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "fields": {
+            "type": "array",
+            "items": {"type": "object"}
+        }
+    }
 }
 
 async def handler(req, context):

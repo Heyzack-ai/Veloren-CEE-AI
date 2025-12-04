@@ -22,6 +22,14 @@ config = {
         "contact_phone": {"type": "string"},
         "rge_number": {"type": "string"},
         "active": {"type": "boolean"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "siret": {"type": "string"},
+        "company_name": {"type": "string"},
+        "city": {"type": "string"},
+        "active": {"type": "boolean"},
+        "updated_at": {"type": "string", "format": "date-time"}
     }
 }
 

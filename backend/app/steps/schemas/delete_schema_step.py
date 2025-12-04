@@ -10,7 +10,10 @@ config = {
     "name": "DeleteSchema",
     "type": "api",
     "path": "/api/schemas/{schema_id}",
-    "method": "DELETE"
+    "method": "DELETE",
+    "responseSchema": {
+        "message": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

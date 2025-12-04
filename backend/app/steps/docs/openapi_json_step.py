@@ -23,6 +23,7 @@ def generate_openapi_spec():
         method = config.get("method", "GET").lower()
         name = config.get("name", "Unknown")
         body_schema = config.get("bodySchema", {})
+        response_schema = config.get("responseSchema", {})
         
         # Extract tag from path (e.g., /api/auth/login -> auth)
         path_parts = path.split("/")
@@ -52,29 +53,114 @@ def generate_openapi_spec():
         if openapi_path not in paths:
             paths[openapi_path] = {}
         
+        # response_schema is already extracted above
+        
+        # Determine default status codes based on method
+        default_status = "200"
+        if method == "post":
+            default_status = "201"
+        elif method == "delete":
+            default_status = "204"
+        
+        # Build responses
+        responses = {}
+        
+        # Success response
+        if response_schema:
+            converted_response = _convert_schema(response_schema)
+            responses[default_status] = {
+                "description": "Success",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": converted_response
+                        }
+                    }
+                }
+            }
+        else:
+            responses[default_status] = {
+                "description": "Success",
+                "content": {
+                    "application/json": {
+                        "schema": {"type": "object"}
+                    }
+                }
+            }
+        
+        # Error responses
+        responses["400"] = {
+            "description": "Bad Request",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "detail": {"type": "string"}
+                        }
+                    }
+                }
+            }
+        }
+        responses["401"] = {
+            "description": "Unauthorized",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "detail": {"type": "string"}
+                        }
+                    }
+                }
+            }
+        }
+        responses["403"] = {
+            "description": "Forbidden",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "detail": {"type": "string"}
+                        }
+                    }
+                }
+            }
+        }
+        responses["404"] = {
+            "description": "Not Found",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "detail": {"type": "string"}
+                        }
+                    }
+                }
+            }
+        }
+        responses["500"] = {
+            "description": "Internal Server Error",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "detail": {"type": "string"}
+                        }
+                    }
+                }
+            }
+        }
+        
         operation = {
             "operationId": name,
             "summary": name.replace("_", " ").title(),
             "tags": [tag],
-            "responses": {
-                "200": {
-                    "description": "Success",
-                    "content": {
-                        "application/json": {
-                            "schema": {"type": "object"}
-                        }
-                    }
-                },
-                "401": {
-                    "description": "Unauthorized"
-                },
-                "404": {
-                    "description": "Not found"
-                },
-                "500": {
-                    "description": "Internal server error"
-                }
-            }
+            "responses": responses
         }
         
         # Add path parameters

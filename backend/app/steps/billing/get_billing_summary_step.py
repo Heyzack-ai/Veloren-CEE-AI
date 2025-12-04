@@ -10,7 +10,26 @@ config = {
     "name": "GetBillingSummary",
     "type": "api",
     "path": "/api/billing/summary",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "total_invoices": {"type": "integer"},
+        "total_amount": {"type": "number"},
+        "paid_amount": {"type": "number"},
+        "pending_amount": {"type": "number"},
+        "invoices": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "invoice_number": {"type": "string"},
+                    "total_amount": {"type": "number"},
+                    "status": {"type": "string"},
+                    "created_at": {"type": "string", "format": "date-time"}
+                }
+            }
+        }
+    }
 }
 
 async def handler(req, context):

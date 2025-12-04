@@ -11,7 +11,28 @@ config = {
     "name": "ListDossiers",
     "type": "api",
     "path": "/api/dossiers",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "dossiers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "reference": {"type": "string"},
+                    "process_id": {"type": "string", "format": "uuid"},
+                    "installer_id": {"type": "string", "format": "uuid"},
+                    "status": {"type": "string"},
+                    "priority": {"type": "string"},
+                    "beneficiary_name": {"type": "string"},
+                    "created_at": {"type": "string", "format": "date-time"}
+                }
+            }
+        },
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "limit": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

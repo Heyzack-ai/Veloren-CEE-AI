@@ -12,7 +12,28 @@ config = {
     "name": "ListBillableDossiers",
     "type": "api",
     "path": "/api/billing/dossiers",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "reference": {"type": "string"},
+                    "installer_id": {"type": "string", "format": "uuid"},
+                    "status": {"type": "string"},
+                    "has_invoice": {"type": "boolean"},
+                    "invoice_id": {"type": "string", "format": "uuid"},
+                    "invoice_status": {"type": "string"}
+                }
+            }
+        },
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "page_size": {"type": "integer"},
+        "total_pages": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

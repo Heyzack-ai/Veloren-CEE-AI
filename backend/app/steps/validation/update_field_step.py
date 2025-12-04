@@ -14,6 +14,15 @@ config = {
     "method": "PATCH",
     "bodySchema": {
         "value": {"type": ["string", "number", "boolean", "object", "array"]}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "field_name": {"type": "string"},
+        "display_name": {"type": "string"},
+        "extracted_value": {"type": "object"},
+        "corrected_value": {"type": "object"},
+        "status": {"type": "string"},
+        "updated_at": {"type": "string", "format": "date-time"}
     }
 }
 

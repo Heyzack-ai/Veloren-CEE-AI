@@ -10,7 +10,12 @@ config = {
     "name": "DownloadDocument",
     "type": "api",
     "path": "/api/documents/{document_id}/download",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "file_content": {"type": "string", "format": "binary"},
+        "content_type": {"type": "string"},
+        "filename": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

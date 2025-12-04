@@ -9,7 +9,21 @@ config = {
     "name": "ListInstallers",
     "type": "api",
     "path": "/api/installers",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string", "format": "uuid"},
+                "siret": {"type": "string"},
+                "company_name": {"type": "string"},
+                "city": {"type": "string"},
+                "active": {"type": "boolean"},
+                "created_at": {"type": "string", "format": "date-time"}
+            }
+        }
+    }
 }
 
 async def handler(req, context):

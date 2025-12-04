@@ -16,6 +16,15 @@ config = {
         "amount": {"type": "number"},
         "payment_reference": {"type": "string"},
         "payment_method": {"type": "string"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "invoice_number": {"type": "string"},
+        "status": {"type": "string"},
+        "paid_at": {"type": "string", "format": "date-time"},
+        "payment_reference": {"type": "string"},
+        "payment_method": {"type": "string"},
+        "total_amount": {"type": "number"}
     }
 }
 

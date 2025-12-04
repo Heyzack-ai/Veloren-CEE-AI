@@ -23,6 +23,14 @@ config = {
         "valid_from": {"type": "string", "format": "date"},
         "valid_until": {"type": "string", "format": "date"},
         "metadata": {"type": "object"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "category": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"}
     }
 }
 

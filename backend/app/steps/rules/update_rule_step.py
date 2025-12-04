@@ -24,6 +24,13 @@ config = {
         "can_override": {"type": "boolean"},
         "is_active": {"type": "boolean"},
         "version": {"type": "integer"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "updated_at": {"type": "string", "format": "date-time"}
     }
 }
 

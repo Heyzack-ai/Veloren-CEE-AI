@@ -10,7 +10,22 @@ config = {
     "name": "GetModelPerformance",
     "type": "api",
     "path": "/api/analytics/model-performance",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "models": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "model_name": {"type": "string"},
+                    "model_version": {"type": "string"},
+                    "task_type": {"type": "string"},
+                    "metrics": {"type": "object"}
+                }
+            }
+        },
+        "total_metrics": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

@@ -7,7 +7,15 @@ config = {
     "name": "GlobalSearch",
     "type": "api",
     "path": "/api/search",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "type": "object",
+        "properties": {
+            "dossiers": {"type": "array", "items": {"type": "object"}},
+            "documents": {"type": "array", "items": {"type": "object"}},
+            "installers": {"type": "array", "items": {"type": "object"}}
+        }
+    }
 }
 
 async def handler(req, context):

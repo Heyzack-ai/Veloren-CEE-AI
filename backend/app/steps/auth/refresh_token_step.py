@@ -14,6 +14,11 @@ config = {
     "method": "POST",
     "bodySchema": {
         "refresh_token": {"type": "string"}
+    },
+    "responseSchema": {
+        "access_token": {"type": "string"},
+        "refresh_token": {"type": "string"},
+        "token_type": {"type": "string"}
     }
 }
 

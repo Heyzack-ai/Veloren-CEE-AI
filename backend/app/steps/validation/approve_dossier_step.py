@@ -14,6 +14,11 @@ config = {
     "method": "POST",
     "bodySchema": {
         "notes": {"type": "string"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "reference": {"type": "string"},
+        "status": {"type": "string"}
     }
 }
 

@@ -14,6 +14,11 @@ config = {
     "method": "POST",
     "bodySchema": {
         "reason": {"type": "string", "required": True}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "reference": {"type": "string"},
+        "status": {"type": "string"}
     }
 }
 

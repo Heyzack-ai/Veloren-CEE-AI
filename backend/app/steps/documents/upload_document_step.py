@@ -28,6 +28,14 @@ config = {
             }
         },
         "document_type_id": {"type": "string", "format": "uuid"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "filename": {"type": "string"},
+        "original_filename": {"type": "string"},
+        "file_size": {"type": "integer"},
+        "processing_status": {"type": "string"},
+        "uploaded_at": {"type": "string", "format": "date-time"}
     }
 }
 

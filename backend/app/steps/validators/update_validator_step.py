@@ -19,6 +19,19 @@ config = {
         "validation_stats": {"type": "object"},
         "notes": {"type": "string"},
         "active": {"type": "boolean"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "user_id": {"type": "string", "format": "uuid"},
+        "employee_id": {"type": "string"},
+        "department": {"type": "string"},
+        "specialization": {"type": "string"},
+        "certifications": {"type": "array"},
+        "max_concurrent_dossiers": {"type": "string"},
+        "validation_stats": {"type": "object"},
+        "notes": {"type": "string"},
+        "active": {"type": "boolean"},
+        "updated_at": {"type": "string", "format": "date-time"}
     }
 }
 

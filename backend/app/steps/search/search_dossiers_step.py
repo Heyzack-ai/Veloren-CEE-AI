@@ -7,7 +7,16 @@ config = {
     "name": "SearchDossiers",
     "type": "api",
     "path": "/api/search/dossiers",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "type": "object",
+        "properties": {
+            "hits": {"type": "array", "items": {"type": "object"}},
+            "total": {"type": "integer"},
+            "page": {"type": "integer"},
+            "total_pages": {"type": "integer"}
+        }
+    }
 }
 
 async def handler(req, context):

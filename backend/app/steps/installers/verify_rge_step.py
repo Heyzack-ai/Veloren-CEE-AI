@@ -14,6 +14,10 @@ config = {
     "bodySchema": {
         "rge_number": {"type": "string"},
         "rge_valid_until": {"type": "string", "format": "date"}
+    },
+    "responseSchema": {
+        "status": {"type": "string"},
+        "message": {"type": "string"}
     }
 }
 

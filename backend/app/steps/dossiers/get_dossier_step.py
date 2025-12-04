@@ -8,7 +8,24 @@ config = {
     "name": "GetDossier",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "reference": {"type": "string"},
+        "process_id": {"type": "string", "format": "uuid"},
+        "installer_id": {"type": "string", "format": "uuid"},
+        "status": {"type": "string"},
+        "priority": {"type": "string"},
+        "beneficiary_name": {"type": "string"},
+        "beneficiary_address": {"type": "string"},
+        "beneficiary_city": {"type": "string"},
+        "beneficiary_postal_code": {"type": "string"},
+        "beneficiary_email": {"type": "string", "format": "email"},
+        "beneficiary_phone": {"type": "string"},
+        "precarity_status": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"}
+    }
 }
 
 async def handler(req, context):

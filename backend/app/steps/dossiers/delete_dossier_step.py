@@ -11,7 +11,8 @@ config = {
     "name": "DeleteDossier",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}",
-    "method": "DELETE"
+    "method": "DELETE",
+    "responseSchema": {}
 }
 
 async def handler(req, context):

@@ -21,6 +21,13 @@ config = {
         "default_value": {"type": "object"},
         "display_order": {"type": "integer"},
         "is_active": {"type": "boolean"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "field_name": {"type": "string"},
+        "document_type_id": {"type": "string", "format": "uuid"},
+        "is_active": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"}
     }
 }
 

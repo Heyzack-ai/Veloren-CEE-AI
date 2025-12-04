@@ -27,6 +27,17 @@ config = {
         "contact_phone": {"type": "string"},
         "rge_number": {"type": "string"},
         "qualifications": {"type": "array"}
+    },
+    "responseSchema": {
+        "user_id": {"type": "string", "format": "uuid"},
+        "user_email": {"type": "string", "format": "email"},
+        "user_name": {"type": "string"},
+        "installer_id": {"type": "string", "format": "uuid"},
+        "siret": {"type": "string"},
+        "company_name": {"type": "string"},
+        "city": {"type": "string"},
+        "active": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"}
     }
 }
 

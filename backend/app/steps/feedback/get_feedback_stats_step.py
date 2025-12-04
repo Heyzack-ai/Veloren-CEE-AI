@@ -9,7 +9,14 @@ config = {
     "name": "GetFeedbackStats",
     "type": "api",
     "path": "/api/feedback/stats",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "total": {"type": "integer"},
+        "by_type": {"type": "object"},
+        "used_for_training": {"type": "integer"},
+        "not_used_for_training": {"type": "integer"},
+        "avg_confidence_before": {"type": "number"}
+    }
 }
 
 async def handler(req, context):

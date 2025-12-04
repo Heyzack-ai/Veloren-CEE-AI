@@ -10,7 +10,21 @@ config = {
     "name": "GetActivity",
     "type": "api",
     "path": "/api/activity/{activity_id}",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "user_id": {"type": "string", "format": "uuid"},
+        "action_type": {"type": "string"},
+        "entity_type": {"type": "string"},
+        "entity_id": {"type": "string", "format": "uuid"},
+        "entity_reference": {"type": "string"},
+        "description": {"type": "string"},
+        "metadata": {"type": "object"},
+        "ip_address": {"type": "string"},
+        "user_agent": {"type": "string"},
+        "duration_ms": {"type": "integer"},
+        "created_at": {"type": "string", "format": "date-time"}
+    }
 }
 
 async def handler(req, context):

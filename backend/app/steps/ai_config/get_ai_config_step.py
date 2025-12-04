@@ -9,7 +9,23 @@ config = {
     "name": "GetAIConfig",
     "type": "api",
     "path": "/api/ai/config",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "configurations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "config_key": {"type": "string"},
+                    "provider": {"type": "string"},
+                    "model_name": {"type": "string"},
+                    "is_active": {"type": "boolean"},
+                    "priority": {"type": "integer"}
+                }
+            }
+        }
+    }
 }
 
 async def handler(req, context):

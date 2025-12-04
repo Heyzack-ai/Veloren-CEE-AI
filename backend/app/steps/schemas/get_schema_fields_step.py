@@ -9,7 +9,26 @@ config = {
     "name": "GetSchemaFields",
     "type": "api",
     "path": "/api/schemas/{schema_id}/fields",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "schema_id": {"type": "string", "format": "uuid"},
+        "fields": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "field_name": {"type": "string"},
+                    "display_name": {"type": "string"},
+                    "data_type": {"type": "string"},
+                    "is_required": {"type": "boolean"},
+                    "display_order": {"type": "integer"},
+                    "is_active": {"type": "boolean"}
+                }
+            }
+        },
+        "total": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

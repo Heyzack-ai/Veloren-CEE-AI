@@ -12,7 +12,36 @@ config = {
     "name": "GetDashboardMetrics",
     "type": "api",
     "path": "/api/analytics/dashboard",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "dossiers": {
+            "type": "object",
+            "properties": {
+                "total": {"type": "integer"},
+                "by_status": {"type": "object"},
+                "submitted_today": {"type": "integer"},
+                "validated_today": {"type": "integer"},
+                "avg_processing_time": {"type": "number"}
+            }
+        },
+        "validation": {
+            "type": "object",
+            "properties": {
+                "pending_review": {"type": "integer"},
+                "avg_confidence": {"type": "number"},
+                "correction_rate": {"type": "number"},
+                "override_rate": {"type": "number"}
+            }
+        },
+        "performance": {
+            "type": "object",
+            "properties": {
+                "avg_validation_time": {"type": "number"},
+                "dossiers_per_validator": {"type": "object"},
+                "ai_model_accuracy": {"type": "object"}
+            }
+        }
+    }
 }
 
 async def handler(req, context):

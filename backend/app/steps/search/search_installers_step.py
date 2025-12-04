@@ -7,7 +7,13 @@ config = {
     "name": "SearchInstallers",
     "type": "api",
     "path": "/api/search/installers",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "hits": {"type": "array", "items": {"type": "object"}},
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "total_pages": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

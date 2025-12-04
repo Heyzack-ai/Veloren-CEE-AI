@@ -7,7 +7,14 @@ config = {
     "name": "GetCurrentUser",
     "type": "api",
     "path": "/api/auth/me",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "email": {"type": "string", "format": "email"},
+        "name": {"type": "string"},
+        "role": {"type": "string"},
+        "active": {"type": "boolean"}
+    }
 }
 
 async def handler(req, context):

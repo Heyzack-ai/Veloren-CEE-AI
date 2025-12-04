@@ -30,6 +30,12 @@ config = {
                 "precarity_status": {"type": "boolean"}
             }
         }
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "reference": {"type": "string"},
+        "status": {"type": "string"},
+        "updated_at": {"type": "string", "format": "date-time"}
     }
 }
 

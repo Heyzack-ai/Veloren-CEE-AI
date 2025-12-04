@@ -12,7 +12,39 @@ config = {
     "name": "GetValidationStatistics",
     "type": "api",
     "path": "/api/analytics/validation",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "dossiers": {
+            "type": "object",
+            "properties": {
+                "total": {"type": "integer"},
+                "approved": {"type": "integer"},
+                "rejected": {"type": "integer"},
+                "in_review": {"type": "integer"},
+                "approval_rate": {"type": "number"}
+            }
+        },
+        "fields": {
+            "type": "object",
+            "properties": {
+                "total": {"type": "integer"},
+                "confirmed": {"type": "integer"},
+                "corrected": {"type": "integer"},
+                "unreviewed": {"type": "integer"},
+                "avg_confidence": {"type": "number"}
+            }
+        },
+        "validation_rules": {
+            "type": "object",
+            "properties": {
+                "total": {"type": "integer"},
+                "passed": {"type": "integer"},
+                "failed": {"type": "integer"},
+                "overridden": {"type": "integer"},
+                "override_rate": {"type": "number"}
+            }
+        }
+    }
 }
 
 async def handler(req, context):

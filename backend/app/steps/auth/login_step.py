@@ -15,6 +15,10 @@ config = {
     "bodySchema": {
         "username": {"type": "string"},
         "password": {"type": "string"}
+    },
+    "responseSchema": {
+        "access_token": {"type": "string"},
+        "token_type": {"type": "string"}
     }
 }
 

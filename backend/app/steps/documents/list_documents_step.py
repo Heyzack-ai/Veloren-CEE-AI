@@ -10,7 +10,25 @@ config = {
     "name": "ListDocuments",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/documents",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "documents": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "format": "uuid"},
+                    "filename": {"type": "string"},
+                    "original_filename": {"type": "string"},
+                    "file_size": {"type": "integer"},
+                    "mime_type": {"type": "string"},
+                    "processing_status": {"type": "string"},
+                    "uploaded_at": {"type": "string", "format": "date-time"}
+                }
+            }
+        },
+        "total": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

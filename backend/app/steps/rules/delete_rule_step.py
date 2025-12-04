@@ -10,7 +10,10 @@ config = {
     "name": "DeleteRule",
     "type": "api",
     "path": "/api/rules/{rule_id}",
-    "method": "DELETE"
+    "method": "DELETE",
+    "responseSchema": {
+        "message": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

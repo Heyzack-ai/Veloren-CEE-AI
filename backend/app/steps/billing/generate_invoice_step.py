@@ -20,6 +20,20 @@ config = {
         "payment_on_validation": {"type": "number"},
         "payment_on_emmy": {"type": "number"},
         "due_date": {"type": "string", "format": "date"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "invoice_number": {"type": "string"},
+        "dossier_id": {"type": "string", "format": "uuid"},
+        "installer_id": {"type": "string", "format": "uuid"},
+        "status": {"type": "string"},
+        "kwh_cumac": {"type": "number"},
+        "price_per_kwh": {"type": "number"},
+        "total_amount": {"type": "number"},
+        "payment_on_validation": {"type": "number"},
+        "payment_on_emmy": {"type": "number"},
+        "due_date": {"type": "string", "format": "date"},
+        "created_at": {"type": "string", "format": "date-time"}
     }
 }
 

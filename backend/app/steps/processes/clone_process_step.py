@@ -15,6 +15,12 @@ config = {
         "new_code": {"type": "string", "required": True},
         "name": {"type": "string"},
         "version": {"type": "string"}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "is_active": {"type": "boolean"}
     }
 }
 

@@ -9,7 +9,11 @@ config = {
     "name": "ListAIModels",
     "type": "api",
     "path": "/api/ai/models",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "models_by_provider": {"type": "object"},
+        "total_models": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

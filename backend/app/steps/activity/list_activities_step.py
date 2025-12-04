@@ -10,7 +10,16 @@ config = {
     "name": "ListActivities",
     "type": "api",
     "path": "/api/activity",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "activities": {
+            "type": "array",
+            "items": {"type": "object"}
+        },
+        "total": {"type": "integer"},
+        "page": {"type": "integer"},
+        "limit": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

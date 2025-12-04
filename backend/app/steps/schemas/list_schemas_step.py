@@ -10,7 +10,21 @@ config = {
     "name": "ListSchemas",
     "type": "api",
     "path": "/api/schemas",
-    "method": "GET"
+    "method": "GET",
+    "responseSchema": {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string", "format": "uuid"},
+                "field_name": {"type": "string"},
+                "document_type_id": {"type": "string", "format": "uuid"},
+                "is_active": {"type": "boolean"},
+                "display_order": {"type": "integer"},
+                "created_at": {"type": "string", "format": "date-time"}
+            }
+        }
+    }
 }
 
 async def handler(req, context):

@@ -14,6 +14,12 @@ config = {
     "method": "POST",
     "bodySchema": {
         "validator_id": {"type": "string", "format": "uuid", "required": True}
+    },
+    "responseSchema": {
+        "id": {"type": "string", "format": "uuid"},
+        "reference": {"type": "string"},
+        "assigned_validator_id": {"type": "string", "format": "uuid"},
+        "status": {"type": "string"}
     }
 }
 
