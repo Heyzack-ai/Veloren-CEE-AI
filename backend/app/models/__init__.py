@@ -1,6 +1,7 @@
 """Database models."""
 from app.models.user import User, UserRole
 from app.models.installer import Installer
+from app.models.validator import Validator
 from app.models.process import Process
 from app.models.dossier import Dossier, DossierStatus, Priority
 from app.models.document import Document, ProcessingStatus
@@ -19,6 +20,7 @@ __all__ = [
     "User",
     "UserRole",
     "Installer",
+    "Validator",
     "Process",
     "Dossier",
     "DossierStatus",

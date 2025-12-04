@@ -12,7 +12,25 @@ config = {
     "name": "UpdateDossier",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}",
-    "method": "PATCH"
+    "method": "PATCH",
+    "bodySchema": {
+        "process_id": {"type": "string", "format": "uuid"},
+        "installer_id": {"type": "string", "format": "uuid"},
+        "priority": {"type": "string", "enum": ["low", "normal", "high", "urgent"]},
+        "status": {"type": "string", "enum": ["draft", "submitted", "awaiting_review", "in_review", "approved", "rejected", "archived"]},
+        "beneficiary": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "address": {"type": "string"},
+                "city": {"type": "string"},
+                "postal_code": {"type": "string"},
+                "email": {"type": "string", "format": "email"},
+                "phone": {"type": "string"},
+                "precarity_status": {"type": "boolean"}
+            }
+        }
+    }
 }
 
 async def handler(req, context):

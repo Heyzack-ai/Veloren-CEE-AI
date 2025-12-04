@@ -11,7 +11,10 @@ config = {
     "name": "ApproveDossier",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/approve",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "notes": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

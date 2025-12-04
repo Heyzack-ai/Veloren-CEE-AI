@@ -8,7 +8,16 @@ config = {
     "name": "SubmitFeedback",
     "type": "api",
     "path": "/api/feedback",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "dossier_id": {"type": "string", "format": "uuid"},
+        "document_id": {"type": "string", "format": "uuid"},
+        "field_id": {"type": "string", "format": "uuid"},
+        "feedback_type": {"type": "string", "enum": ["correction", "improvement", "error"], "required": True},
+        "feedback_text": {"type": "string", "required": True},
+        "suggested_value": {"type": "string"},
+        "is_used_for_training": {"type": "boolean"}
+    }
 }
 
 async def handler(req, context):

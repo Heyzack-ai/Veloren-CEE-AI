@@ -9,7 +9,21 @@ config = {
     "name": "CreateRule",
     "type": "api",
     "path": "/api/rules",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "code": {"type": "string", "required": True},
+        "name": {"type": "string", "required": True},
+        "description": {"type": "string"},
+        "process_id": {"type": "string", "format": "uuid"},
+        "document_type_id": {"type": "string", "format": "uuid"},
+        "rule_type": {"type": "string", "enum": ["document", "cross_document", "business"], "required": True},
+        "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+        "expression": {"type": "string", "required": True},
+        "error_message": {"type": "string", "required": True},
+        "can_override": {"type": "boolean"},
+        "is_active": {"type": "boolean"},
+        "version": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

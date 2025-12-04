@@ -1,37 +1,32 @@
-"""Create installer endpoint step."""
+"""Create validator endpoint step."""
+from uuid import UUID
 from app.core.database import get_session_maker
 from app.core.dependencies import get_current_user_from_token, require_role_from_user
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
-from app.models.installer import Installer
-from app.schemas.installer import InstallerCreate
+from app.models.validator import Validator
 from sqlalchemy import select
 
 config = {
-    "name": "CreateInstaller",
+    "name": "CreateValidator",
     "type": "api",
-    "path": "/api/installers",
+    "path": "/api/validators",
     "method": "POST",
     "bodySchema": {
         "email": {"type": "string", "format": "email", "required": True},
         "password": {"type": "string", "minLength": 8, "required": True},
         "name": {"type": "string", "required": True},
-        "company_name": {"type": "string", "required": True},
-        "siret": {"type": "string", "required": True},
-        "siren": {"type": "string", "required": True},
-        "address": {"type": "string", "required": True},
-        "city": {"type": "string", "required": True},
-        "postal_code": {"type": "string", "required": True},
-        "contact_name": {"type": "string", "required": True},
-        "contact_email": {"type": "string", "format": "email", "required": True},
-        "contact_phone": {"type": "string"},
-        "rge_number": {"type": "string"},
-        "qualifications": {"type": "array"}
+        "employee_id": {"type": "string"},
+        "department": {"type": "string"},
+        "specialization": {"type": "string"},
+        "certifications": {"type": "array"},
+        "max_concurrent_dossiers": {"type": "string"},
+        "notes": {"type": "string"}
     }
 }
 
 async def handler(req, context):
-    """Handle create installer request."""
+    """Handle create validator request."""
     headers = req.get("headers", {})
     auth_header = headers.get("authorization") or headers.get("Authorization", "")
     
@@ -70,48 +65,32 @@ async def handler(req, context):
                     "body": {"detail": "Email already exists"}
                 }
             
-            # Check if installer with this SIRET already exists
-            siret = body.get("siret")
-            if siret:
-                existing_installer = await db.execute(select(Installer).where(Installer.siret == siret))
-                if existing_installer.scalar_one_or_none():
-                    return {
-                        "status": 400,
-                        "body": {"detail": "SIRET already exists"}
-                    }
-            
             # Create user account
             user = User(
                 email=email,
                 password_hash=get_password_hash(password),
                 name=name,
-                role=UserRole.INSTALLER
+                role=UserRole.VALIDATOR
             )
             db.add(user)
             await db.flush()  # Flush to get user.id without committing
             
-            # Create installer record
-            installer_data = {
-                "user_id": user.id,
-                "company_name": body.get("company_name"),
-                "siret": body.get("siret"),
-                "siren": body.get("siren"),
-                "address": body.get("address"),
-                "city": body.get("city"),
-                "postal_code": body.get("postal_code"),
-                "contact_name": body.get("contact_name", name),
-                "contact_email": body.get("contact_email", email),
-                "contact_phone": body.get("contact_phone"),
-                "rge_number": body.get("rge_number"),
-                "qualifications": body.get("qualifications", []),
-                "active": True
-            }
-            
-            installer = Installer(**installer_data)
-            db.add(installer)
+            # Create validator record
+            validator = Validator(
+                user_id=user.id,
+                employee_id=body.get("employee_id"),
+                department=body.get("department"),
+                specialization=body.get("specialization"),
+                certifications=body.get("certifications", []),
+                max_concurrent_dossiers=body.get("max_concurrent_dossiers", "10"),
+                validation_stats=body.get("validation_stats", {}),
+                notes=body.get("notes"),
+                active=True
+            )
+            db.add(validator)
             await db.commit()
             await db.refresh(user)
-            await db.refresh(installer)
+            await db.refresh(validator)
             
             # Log activity
             try:
@@ -119,10 +98,10 @@ async def handler(req, context):
                 logger = ActivityLogger(db)
                 await logger.log(
                     user_id=str(current_user.id),
-                    action_type="installer.created",
-                    entity_type="installer",
-                    entity_id=str(installer.id),
-                    description=f"Installer {installer.company_name} created with user {email}"
+                    action_type="validator.created",
+                    entity_type="validator",
+                    entity_id=str(validator.id),
+                    description=f"Validator {name} created with user {email}"
                 )
             except Exception:
                 pass
@@ -133,17 +112,17 @@ async def handler(req, context):
                     "user_id": str(user.id),
                     "user_email": user.email,
                     "user_name": user.name,
-                    "installer_id": str(installer.id),
-                    "siret": installer.siret,
-                    "company_name": installer.company_name,
-                    "city": installer.city,
-                    "active": installer.active,
-                    "created_at": installer.created_at.isoformat() if installer.created_at else None
+                    "validator_id": str(validator.id),
+                    "employee_id": validator.employee_id,
+                    "department": validator.department,
+                    "specialization": validator.specialization,
+                    "active": validator.active,
+                    "created_at": validator.created_at.isoformat() if validator.created_at else None
                 }
             }
         except ValueError as e:
             return {"status": 401 if "credentials" in str(e) else 403, "body": {"detail": str(e)}}
         except Exception as e:
-            context.logger.error(f"Error creating installer: {e}", exc_info=True)
+            context.logger.error(f"Error creating validator: {e}", exc_info=True)
             return {"status": 500, "body": {"detail": "Internal server error"}}
 

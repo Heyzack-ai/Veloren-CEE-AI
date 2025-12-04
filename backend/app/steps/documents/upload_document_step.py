@@ -2,9 +2,11 @@
 from uuid import UUID
 from io import BytesIO
 from app.core.database import get_session_maker
-from app.core.dependencies import get_current_user_from_token
+from app.core.dependencies import get_current_user_from_token, require_role_from_user
 from app.core.config import settings
+from app.models.user import UserRole
 from app.models.dossier import Dossier
+from app.models.installer import Installer
 from app.models.document import Document, ProcessingStatus
 from app.services.pdf_storage import PDFStorageService
 from app.services.activity import ActivityLogger
@@ -14,7 +16,19 @@ config = {
     "name": "UploadDocument",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/documents",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "file": {
+            "type": "object",
+            "required": True,
+            "properties": {
+                "filename": {"type": "string"},
+                "content": {"type": "string", "format": "binary"},
+                "content_type": {"type": "string"}
+            }
+        },
+        "document_type_id": {"type": "string", "format": "uuid"}
+    }
 }
 
 async def handler(req, context):
@@ -52,11 +66,43 @@ async def handler(req, context):
         try:
             current_user = await get_current_user_from_token(token, db)
             
-            dossier_result = await db.execute(select(Dossier).where(Dossier.id == dossier_id))
-            dossier = dossier_result.scalar_one_or_none()
-            
-            if not dossier:
-                return {"status": 404, "body": {"detail": "Dossier not found"}}
+            # Only installers and administrators can upload documents
+            # If installer, they can only upload to their own dossiers
+            if current_user.role == UserRole.INSTALLER:
+                # Check if user has an installer record
+                installer_result = await db.execute(
+                    select(Installer).where(Installer.user_id == current_user.id)
+                )
+                installer = installer_result.scalar_one_or_none()
+                
+                if not installer:
+                    return {
+                        "status": 403,
+                        "body": {"detail": "Installer record not found for this user"}
+                    }
+                
+                # Check if dossier belongs to this installer
+                dossier_result = await db.execute(
+                    select(Dossier).where(
+                        Dossier.id == dossier_id,
+                        Dossier.installer_id == installer.id
+                    )
+                )
+                dossier = dossier_result.scalar_one_or_none()
+                
+                if not dossier:
+                    return {
+                        "status": 403,
+                        "body": {"detail": "You can only upload documents to your own dossiers"}
+                    }
+            else:
+                # Administrators can upload to any dossier
+                current_user = await require_role_from_user(current_user, [UserRole.ADMINISTRATOR])
+                dossier_result = await db.execute(select(Dossier).where(Dossier.id == dossier_id))
+                dossier = dossier_result.scalar_one_or_none()
+                
+                if not dossier:
+                    return {"status": 404, "body": {"detail": "Dossier not found"}}
             
             # Extract file info
             filename = file_data.get("filename", "unknown")

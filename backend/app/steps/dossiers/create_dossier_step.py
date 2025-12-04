@@ -84,6 +84,19 @@ async def handler(req, context):
                     "body": {"detail": "Installer not found"}
                 }
             
+            # If user is an installer, they can only create dossiers for themselves
+            if current_user.role == UserRole.INSTALLER:
+                installer_user_result = await db.execute(
+                    select(Installer).where(Installer.user_id == current_user.id)
+                )
+                installer_user = installer_user_result.scalar_one_or_none()
+                
+                if not installer_user or installer_user.id != dossier_data.installer_id:
+                    return {
+                        "status": 403,
+                        "body": {"detail": "You can only create dossiers for your own installer account"}
+                    }
+            
             # Generate reference
             count_result = await db.execute(select(func.count(Dossier.id)))
             count = count_result.scalar() or 0

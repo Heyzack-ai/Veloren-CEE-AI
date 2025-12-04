@@ -84,20 +84,33 @@ def generate_openapi_spec():
         # Add request body for POST/PUT/PATCH
         if method in ["post", "put", "patch"]:
             if body_schema:
+                converted_props = _convert_schema(body_schema)
+                # Extract required fields from body_schema if specified
+                required_fields = []
+                if isinstance(body_schema, dict):
+                    for key, value in body_schema.items():
+                        if isinstance(value, dict) and value.get("required") is True:
+                            required_fields.append(key)
+                
+                request_body_schema = {
+                    "type": "object",
+                    "properties": converted_props
+                }
+                
+                if required_fields:
+                    request_body_schema["required"] = required_fields
+                
                 operation["requestBody"] = {
                     "required": True,
                     "content": {
                         "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": _convert_schema(body_schema)
-                            }
+                            "schema": request_body_schema
                         }
                     }
                 }
             else:
                 operation["requestBody"] = {
-                    "required": True,
+                    "required": False,
                     "content": {
                         "application/json": {
                             "schema": {"type": "object"}
@@ -150,22 +163,57 @@ def _convert_schema(schema):
         for key, value in schema.items():
             if isinstance(value, dict):
                 if "type" in value:
-                    result[key] = {
-                        "type": value["type"],
-                        "format": value.get("format"),
-                        "enum": value.get("enum"),
-                        "minLength": value.get("minLength"),
-                        "maximum": value.get("maximum"),
-                        "minimum": value.get("minimum")
-                    }
+                    prop_type = value["type"]
+                    
+                    # Handle array of types (union types) - use anyOf
+                    if isinstance(prop_type, list):
+                        result[key] = {
+                            "anyOf": [
+                                {"type": t} if isinstance(t, str) else {"type": "object"}
+                                for t in prop_type
+                            ]
+                        }
+                    else:
+                        # Single type
+                        prop_schema = {"type": prop_type}
+                        
+                        # Add format if present
+                        if "format" in value:
+                            prop_schema["format"] = value["format"]
+                        
+                        # Add enum if present (must be array)
+                        if "enum" in value:
+                            enum_val = value["enum"]
+                            if isinstance(enum_val, list):
+                                prop_schema["enum"] = enum_val
+                            elif isinstance(enum_val, str):
+                                # If enum is a string, try to parse it or skip
+                                pass
+                        
+                        # Add constraints
+                        if "minLength" in value:
+                            prop_schema["minLength"] = value["minLength"]
+                        if "maxLength" in value:
+                            prop_schema["maxLength"] = value["maxLength"]
+                        if "minimum" in value:
+                            prop_schema["minimum"] = value["minimum"]
+                        if "maximum" in value:
+                            prop_schema["maximum"] = value["maximum"]
+                        if "pattern" in value:
+                            prop_schema["pattern"] = value["pattern"]
+                        
+                        result[key] = prop_schema
                 elif "properties" in value:
                     result[key] = {
                         "type": "object",
-                        "properties": _convert_schema(value.get("properties", {}))
+                        "properties": _convert_schema(value.get("properties", {})),
+                        "required": value.get("required", [])
                     }
                 else:
+                    # Nested object without explicit properties
                     result[key] = _convert_schema(value)
             else:
+                # Value is not a dict, treat as string
                 result[key] = {"type": "string"}
         return result
     return schema

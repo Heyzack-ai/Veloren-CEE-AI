@@ -8,7 +8,20 @@ config = {
     "name": "CreateSchema",
     "type": "api",
     "path": "/api/schemas",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "document_type_id": {"type": "string", "format": "uuid", "required": True},
+        "field_name": {"type": "string", "required": True},
+        "display_name": {"type": "string", "required": True},
+        "description": {"type": "string"},
+        "data_type": {"type": "string", "required": True},
+        "is_required": {"type": "boolean"},
+        "validation_pattern": {"type": "string"},
+        "extraction_hints": {"type": "object"},
+        "default_value": {"type": "object"},
+        "display_order": {"type": "integer"},
+        "is_active": {"type": "boolean"}
+    }
 }
 
 async def handler(req, context):

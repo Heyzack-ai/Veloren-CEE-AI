@@ -11,7 +11,18 @@ config = {
     "name": "UpdateInstaller",
     "type": "api",
     "path": "/api/installers/{installer_id}",
-    "method": "PATCH"
+    "method": "PATCH",
+    "bodySchema": {
+        "company_name": {"type": "string"},
+        "address": {"type": "string"},
+        "city": {"type": "string"},
+        "postal_code": {"type": "string"},
+        "contact_name": {"type": "string"},
+        "contact_email": {"type": "string", "format": "email"},
+        "contact_phone": {"type": "string"},
+        "rge_number": {"type": "string"},
+        "active": {"type": "boolean"}
+    }
 }
 
 async def handler(req, context):

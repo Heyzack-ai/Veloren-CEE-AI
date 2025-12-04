@@ -10,7 +10,12 @@ config = {
     "name": "CloneProcess",
     "type": "api",
     "path": "/api/processes/{process_id}/clone",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "new_code": {"type": "string", "required": True},
+        "name": {"type": "string"},
+        "version": {"type": "string"}
+    }
 }
 
 async def handler(req, context):

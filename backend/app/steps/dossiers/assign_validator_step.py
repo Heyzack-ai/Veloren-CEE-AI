@@ -11,7 +11,10 @@ config = {
     "name": "AssignValidator",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/assign",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "validator_id": {"type": "string", "format": "uuid", "required": True}
+    }
 }
 
 async def handler(req, context):

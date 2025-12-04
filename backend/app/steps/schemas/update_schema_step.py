@@ -10,7 +10,18 @@ config = {
     "name": "UpdateSchema",
     "type": "api",
     "path": "/api/schemas/{schema_id}",
-    "method": "PATCH"
+    "method": "PATCH",
+    "bodySchema": {
+        "display_name": {"type": "string"},
+        "description": {"type": "string"},
+        "data_type": {"type": "string"},
+        "is_required": {"type": "boolean"},
+        "validation_pattern": {"type": "string"},
+        "extraction_hints": {"type": "object"},
+        "default_value": {"type": "object"},
+        "display_order": {"type": "integer"},
+        "is_active": {"type": "boolean"}
+    }
 }
 
 async def handler(req, context):

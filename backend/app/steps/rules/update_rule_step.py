@@ -10,7 +10,21 @@ config = {
     "name": "UpdateRule",
     "type": "api",
     "path": "/api/rules/{rule_id}",
-    "method": "PATCH"
+    "method": "PATCH",
+    "bodySchema": {
+        "code": {"type": "string"},
+        "name": {"type": "string"},
+        "description": {"type": "string"},
+        "process_id": {"type": "string", "format": "uuid"},
+        "document_type_id": {"type": "string", "format": "uuid"},
+        "rule_type": {"type": "string", "enum": ["document", "cross_document", "business"]},
+        "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+        "expression": {"type": "string"},
+        "error_message": {"type": "string"},
+        "can_override": {"type": "boolean"},
+        "is_active": {"type": "boolean"},
+        "version": {"type": "integer"}
+    }
 }
 
 async def handler(req, context):

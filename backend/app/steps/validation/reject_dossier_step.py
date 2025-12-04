@@ -11,7 +11,10 @@ config = {
     "name": "RejectDossier",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/reject",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "reason": {"type": "string", "required": True}
+    }
 }
 
 async def handler(req, context):

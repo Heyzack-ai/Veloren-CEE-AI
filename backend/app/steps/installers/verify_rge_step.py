@@ -10,7 +10,11 @@ config = {
     "name": "VerifyRGE",
     "type": "api",
     "path": "/api/installers/{installer_id}/verify-rge",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "rge_number": {"type": "string"},
+        "rge_valid_until": {"type": "string", "format": "date"}
+    }
 }
 
 async def handler(req, context):

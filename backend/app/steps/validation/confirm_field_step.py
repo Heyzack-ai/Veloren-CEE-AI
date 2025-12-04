@@ -12,7 +12,8 @@ config = {
     "name": "ConfirmField",
     "type": "api",
     "path": "/api/dossiers/{dossier_id}/fields/{field_id}/confirm",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {}
 }
 
 async def handler(req, context):

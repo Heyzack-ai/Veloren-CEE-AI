@@ -10,7 +10,20 @@ config = {
     "name": "CreateProcess",
     "type": "api",
     "path": "/api/processes",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {
+        "code": {"type": "string", "required": True},
+        "name": {"type": "string", "required": True},
+        "description": {"type": "string"},
+        "category": {"type": "string"},
+        "version": {"type": "string"},
+        "is_active": {"type": "boolean"},
+        "is_system": {"type": "boolean"},
+        "is_coup_de_pouce": {"type": "boolean"},
+        "valid_from": {"type": "string", "format": "date"},
+        "valid_until": {"type": "string", "format": "date"},
+        "metadata": {"type": "object"}
+    }
 }
 
 async def handler(req, context):

@@ -11,7 +11,8 @@ config = {
     "name": "ReprocessDocument",
     "type": "api",
     "path": "/api/documents/{document_id}/reprocess",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {}
 }
 
 async def handler(req, context):

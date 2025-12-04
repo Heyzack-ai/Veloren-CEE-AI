@@ -10,7 +10,8 @@ config = {
     "name": "ToggleRule",
     "type": "api",
     "path": "/api/rules/{rule_id}/toggle",
-    "method": "POST"
+    "method": "POST",
+    "bodySchema": {}
 }
 
 async def handler(req, context):
