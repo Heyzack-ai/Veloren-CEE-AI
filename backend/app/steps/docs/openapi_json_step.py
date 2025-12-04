@@ -120,6 +120,10 @@ def generate_openapi_spec():
         },
         "servers": [
             {
+                "url": "https://veloren-dev.heyzack.ai",
+                "description": "Production server"
+            },
+            {
                 "url": "http://localhost:8000",
                 "description": "Development server"
             }
