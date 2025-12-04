@@ -25,11 +25,15 @@ STEPS: Dict[str, Dict[str, Any]] = {}
 
 def discover_steps():
     """Discover all Motia steps in the steps directory."""
-    steps_dir = Path(__file__).parent.parent / "steps"
+    # Steps are in app/steps/ directory
+    steps_dir = Path(__file__).parent / "steps"
     
     if not steps_dir.exists():
         logger.warning(f"Steps directory not found: {steps_dir}")
         return
+    
+    # Get the app directory (parent of steps_dir)
+    app_dir = steps_dir.parent
     
     # Walk through all Python files in steps directory
     for py_file in steps_dir.rglob("*.py"):
@@ -37,7 +41,9 @@ def discover_steps():
             continue
         
         # Convert file path to module path
-        relative_path = py_file.relative_to(steps_dir.parent)
+        # relative_path should be relative to the backend directory (app_dir.parent)
+        # so we get app/steps/auth/login_step.py -> app.steps.auth.login_step
+        relative_path = py_file.relative_to(app_dir.parent)
         module_path = str(relative_path).replace("/", ".").replace("\\", ".").replace(".py", "")
         
         try:
