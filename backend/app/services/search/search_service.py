@@ -66,12 +66,73 @@ class SearchService:
             # Return empty result if Typesense is not available
             return SearchResult(hits=[], total=0, page=page, total_pages=0)
 
+    async def search_documents(
+        self,
+        query: str,
+        filters: Optional[dict[str, str]] = None,
+        page: int = 1,
+        per_page: int = 20
+    ) -> SearchResult:
+        """Search documents collection."""
+        if not self.client:
+            return SearchResult(hits=[], total=0, page=page, total_pages=0)
+        
+        filter_by = self._build_filter_string(filters) if filters else ""
+        
+        try:
+            result = self.client.collections["documents"].documents.search({
+                "q": query,
+                "query_by": "filename,original_filename,text_content",
+                "filter_by": filter_by,
+                "page": page,
+                "per_page": per_page
+            })
+            
+            return SearchResult(
+                hits=[h["document"] for h in result.get("hits", [])],
+                total=result["found"],
+                page=result["page"],
+                total_pages=(result["found"] + per_page - 1) // per_page
+            )
+        except Exception:
+            return SearchResult(hits=[], total=0, page=page, total_pages=0)
+    
+    async def search_installers(
+        self,
+        query: str,
+        filters: Optional[dict[str, str]] = None,
+        page: int = 1,
+        per_page: int = 20
+    ) -> SearchResult:
+        """Search installers collection."""
+        if not self.client:
+            return SearchResult(hits=[], total=0, page=page, total_pages=0)
+        
+        filter_by = self._build_filter_string(filters) if filters else ""
+        
+        try:
+            result = self.client.collections["installers"].documents.search({
+                "q": query,
+                "query_by": "name,siret,rge_number,address,city",
+                "filter_by": filter_by,
+                "page": page,
+                "per_page": per_page
+            })
+            
+            return SearchResult(
+                hits=[h["document"] for h in result.get("hits", [])],
+                total=result["found"],
+                page=result["page"],
+                total_pages=(result["found"] + per_page - 1) // per_page
+            )
+        except Exception:
+            return SearchResult(hits=[], total=0, page=page, total_pages=0)
+
     async def global_search(self, query: str) -> GlobalSearchResult:
         """Search across all collections."""
         dossiers = await self.search_dossiers(query, per_page=5)
-        # TODO: Implement documents and installers search
-        documents = SearchResult(hits=[], total=0, page=1, total_pages=0)
-        installers = SearchResult(hits=[], total=0, page=1, total_pages=0)
+        documents = await self.search_documents(query, per_page=5)
+        installers = await self.search_installers(query, per_page=5)
 
         return GlobalSearchResult(
             dossiers=dossiers,

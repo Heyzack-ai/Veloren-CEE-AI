@@ -1,12 +1,21 @@
 """PDF storage service with AWS S3 support."""
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Protocol
 from uuid import UUID
-from fastapi import UploadFile
 import boto3
 from botocore.exceptions import ClientError, BotoCoreError
 from app.core.config import settings
+
+
+class FileLike(Protocol):
+    """Protocol for file-like objects."""
+    filename: Optional[str]
+    content_type: Optional[str]
+    
+    async def read(self) -> bytes:
+        """Read file content."""
+        ...
 
 
 class PDFStorageService:
@@ -64,7 +73,7 @@ class PDFStorageService:
         """Generate S3 key for a file."""
         return f"dossiers/{dossier_id}/{filename}"
     
-    async def save_file(self, file: UploadFile, dossier_id: UUID) -> tuple[str, int]:
+    async def save_file(self, file: FileLike, dossier_id: UUID) -> tuple[str, int]:
         """
         Save uploaded PDF file to S3 or local storage.
         
