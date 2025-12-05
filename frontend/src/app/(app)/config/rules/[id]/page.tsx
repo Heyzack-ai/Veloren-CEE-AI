@@ -281,31 +281,33 @@ export default function RuleBuilderPage({ params }: PageProps) {
             <CardContent className="space-y-4">
               {/* Process Types Multi-Select */}
               <div className="space-y-2">
-                <Label>{t('ruleWizard.scope.processTypes')}</Label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  {t('ruleWizard.scope.processTypesHint')}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {mockProcesses.map((process) => (
-                    <Badge
-                      key={process.id}
-                      variant={selectedProcessTypes.includes(process.id) ? 'default' : 'outline'}
-                      className="cursor-pointer transition-colors hover:bg-primary/90"
-                      onClick={() => {
-                        setSelectedProcessTypes(prev =>
-                          prev.includes(process.id)
-                            ? prev.filter(id => id !== process.id)
-                            : [...prev, process.id]
-                        );
-                      }}
-                    >
-                      <span className="font-medium">{process.code}</span>
-                    </Badge>
-                  ))}
-                </div>
-                {selectedProcessTypes.length === 0 && (
-                  <p className="text-xs text-blue-600 mt-2">
-                    {t('ruleWizard.scope.allProcessesSelected')}
+                <Label htmlFor="processes">{t('ruleWizard.scope.process')}</Label>
+                <Select
+                  value={selectedProcessId}
+                  onValueChange={(value) => {
+                    setSelectedProcessId(value);
+                    // Reset document types when process changes
+                    setSelectedDocTypes([]);
+                  }}
+                >
+                  <SelectTrigger id="processes">
+                    <SelectValue placeholder={t('ruleWizard.scope.processPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('ruleWizard.scope.allProcesses')}</SelectItem>
+                    {mockProcesses.map((process) => (
+                      <SelectItem key={process.id} value={process.id}>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{process.code}</span>
+                          <span className="text-muted-foreground">- {process.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedProcessId !== 'all' && (
+                  <p className="text-xs text-muted-foreground">
+                    {t('ruleWizard.scope.documentTypesAvailable', { count: mockProcesses.find(p => p.id === selectedProcessId)?.requiredDocuments.length || 0 })}
                   </p>
                 )}
                 {selectedProcessTypes.length > 0 && (

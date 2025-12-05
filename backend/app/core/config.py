@@ -1,13 +1,26 @@
 """Application configuration settings."""
 from pydantic_settings import BaseSettings
-from typing import Optional
+from pydantic import model_validator
+from typing import Optional, Any
+
+# Hardcoded production database URL - environment variables are ignored
+PRODUCTION_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@15.237.138.96:5432/postgres"
 
 
 class Settings(BaseSettings):
     """Application settings."""
     
-    # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/pdf_checker"
+    # Database - DATABASE_URL is hardcoded to production, environment variables are ignored
+    DATABASE_URL: str = PRODUCTION_DATABASE_URL
+    
+    @model_validator(mode='before')
+    @classmethod
+    def force_production_database_url(cls, data: Any) -> Any:
+        """Force DATABASE_URL to use hardcoded production value, ignoring environment variables."""
+        if isinstance(data, dict):
+            # Always use the hardcoded production URL, ignore any env value
+            data['DATABASE_URL'] = PRODUCTION_DATABASE_URL
+        return data
     
     # Redis (for caching and state management)
     REDIS_URL: str = "redis://localhost:6379"
@@ -56,8 +69,13 @@ class Settings(BaseSettings):
     MAX_PAGE_SIZE: int = 100
     
     class Config:
+        # Prioritize environment variables over .env file
+        # Environment variables take precedence by default in Pydantic Settings
         env_file = ".env"
+        env_file_encoding = "utf-8"
         case_sensitive = True
+        # Ensure environment variables are checked first
+        env_ignore_empty = True
 
 
 settings = Settings()

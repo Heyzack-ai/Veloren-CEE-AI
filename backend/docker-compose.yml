@@ -1,21 +1,4 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: cee_validation_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pdf_checker
-    ports:
-      - "5433:5432"  # Using 5433 to avoid conflict with existing PostgreSQL
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   redis:
     image: redis:7-alpine
     container_name: cee_validation_redis
@@ -44,7 +27,6 @@ services:
       retries: 3
 
 volumes:
-  postgres_data:
   redis_data:
   typesense_data:
 

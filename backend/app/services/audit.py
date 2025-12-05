@@ -1,7 +1,8 @@
 """Audit logging service."""
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.audit_log import AuditLog
+from app.models.activity_log import ActivityLog
+import uuid
 
 
 class AuditService:
@@ -10,10 +11,10 @@ class AuditService:
     async def log_action(
         self,
         db: AsyncSession,
-        user_id: Optional[int],
+        user_id: Optional[uuid.UUID],
         action: str,
         resource_type: Optional[str] = None,
-        resource_id: Optional[int] = None,
+        resource_id: Optional[uuid.UUID] = None,
         details: Optional[Dict[str, Any]] = None,
         ip_address: Optional[str] = None
     ) -> None:
@@ -22,22 +23,22 @@ class AuditService:
         
         Args:
             db: Database session
-            user_id: User ID performing action
+            user_id: User ID performing action (UUID)
             action: Action name
-            resource_type: Type of resource (e.g., "user", "submission")
-            resource_id: ID of resource
+            resource_type: Type of resource (e.g., "user", "dossier")
+            resource_id: ID of resource (UUID)
             details: Additional details as dictionary
             ip_address: IP address of requester
         """
-        audit_log = AuditLog(
+        activity_log = ActivityLog(
             user_id=user_id,
-            action=action,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            details=details,
+            action_type=action,
+            entity_type=resource_type or "system",
+            entity_id=resource_id,
+            meta_data=details or {},
             ip_address=ip_address
         )
-        db.add(audit_log)
+        db.add(activity_log)
         await db.commit()
 
 

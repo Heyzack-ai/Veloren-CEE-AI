@@ -1,6 +1,6 @@
 # CEE Validation System Backend
 
-A comprehensive CEE (Certificat d'Économie d'Énergie) document validation system built with FastAPI, SQLAlchemy, and PostgreSQL.
+A comprehensive CEE (Certificat d'Économie d'Énergie) document validation system built with Motia (Python), SQLAlchemy, and PostgreSQL.
 
 ## Features
 
@@ -17,7 +17,8 @@ A comprehensive CEE (Certificat d'Économie d'Énergie) document validation syst
 
 ## Tech Stack
 
-- **FastAPI**: Modern, fast web framework for building APIs
+- **Motia**: Unified backend framework for APIs, jobs, workflows, and AI agents
+- **aiohttp**: Async HTTP server framework
 - **SQLAlchemy**: Async SQL toolkit and ORM
 - **PostgreSQL**: Relational database with JSONB support
 - **Alembic**: Database migration tool
@@ -35,16 +36,22 @@ The backend follows a clean architecture pattern:
 ```
 backend/
 ├── app/
-│   ├── api/              # API endpoints (REST routes)
 │   ├── core/             # Core configuration and dependencies
 │   ├── models/           # SQLAlchemy database models
 │   ├── schemas/          # Pydantic request/response schemas
-│   └── services/         # Business logic services
-│       ├── ai/           # AI abstraction layer
-│       ├── activity/     # Activity logging
-│       ├── rules/        # Rule engine
-│       ├── search/       # Search service
-│       └── storage/      # File storage
+│   ├── services/         # Business logic services
+│   │   ├── ai/           # AI abstraction layer
+│   │   ├── activity/     # Activity logging
+│   │   ├── rules/        # Rule engine
+│   │   ├── search/       # Search service
+│   │   └── storage/      # File storage
+│   ├── motia_server.py   # Motia server implementation
+│   └── main.py           # Application entry point
+├── steps/                # Motia steps (API endpoints)
+│   ├── auth/             # Authentication steps
+│   ├── dossiers/         # Dossier management steps
+│   ├── documents/        # Document handling steps
+│   └── ...               # Other step modules
 ├── alembic/              # Database migrations
 ├── scripts/              # Utility scripts
 └── tests/                # Test suite
@@ -90,10 +97,12 @@ cp .env.example .env
 
 6. **Update the `.env` file with your configuration:**
 
-**Database:**
+**Database (IMPORTANT: Must use `postgresql+asyncpg://` format):**
 ```env
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5433/pdf_checker
 ```
+
+**⚠️ Critical:** The DATABASE_URL must use `postgresql+asyncpg://` (not just `postgresql://`) for async support. This is required for the async SQLAlchemy engine.
 
 **JWT:**
 ```env
@@ -150,7 +159,7 @@ python scripts/init_db.py
 
 9. **Start the server:**
 ```bash
-uvicorn app.main:app --reload
+python3 -m app.main
 ```
 
 The API will be available at `http://localhost:8000`
@@ -159,7 +168,8 @@ The API will be available at `http://localhost:8000`
 
 Once the server is running, you can access:
 - **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
+- **OpenAPI Spec**: `http://localhost:8000/api/openapi.json`
+- **Steps Discovery**: `http://localhost:8000/api/steps`
 
 ## Database Schema
 

@@ -289,13 +289,6 @@ cee-validation-backend/
 │   │   │   ├── detect_signatures.step.py
 │   │   │   └── validate_extraction.step.py
 │   │   │
-│   │   ├── bulk_upload/               # Bulk Upload Processing Pipeline
-│   │   │   ├── split_pdf_document.step.py      # Split multi-page PDFs
-│   │   │   ├── detect_process_codes.step.py    # Extract CEE codes from attestations
-│   │   │   ├── validate_document_completeness.step.py  # Check required docs
-│   │   │   ├── send_missing_documents_email.step.py    # Notify installer
-│   │   │   └── finalize_bulk_upload.step.py    # Complete processing
-│   │   │
 │   │   ├── validation/
 │   │   │   ├── run_document_rules.step.py
 │   │   │   ├── run_cross_document_rules.step.py
@@ -637,28 +630,6 @@ cee-validation-backend/
 | GET | `/api/portal/profile` | Get my profile | Yes | Installer |
 | PATCH | `/api/portal/profile` | Update my profile | Yes | Installer |
 
-### Bulk Upload (Simplified Installer Flow)
-
-| Method | Endpoint | Description | Auth | Roles |
-|--------|----------|-------------|------|-------|
-| POST | `/api/portal/bulk-upload` | Bulk upload documents with auto process detection | Yes | Installer |
-| GET | `/api/portal/bulk-upload/:dossierId/status` | Get bulk upload processing status | Yes | Installer |
-| POST | `/api/portal/bulk-upload/:dossierId/add-documents` | Add documents to existing dossier | Yes | Installer |
-| POST | `/api/processes/detect` | Detect CEE processes from documents (preview) | Yes | Installer, Admin |
-| POST | `/api/documents/:id/split` | Split multi-page PDF into individual documents | Yes | Admin, System |
-
-#### Bulk Upload Flow Description
-
-The bulk upload flow simplifies document submission for installers:
-
-1. **Upload**: Installer uploads one or more files (including multi-page PDFs)
-2. **Immediate Response**: System accepts files and returns dossier ID immediately
-3. **Background Processing**:
-   - Split multi-page PDFs into individual documents
-   - Classify each document (devis, facture, attestation, etc.)
-   - Detect CEE process codes from Attestation sur l'honneur
-   - Validate document completeness per process requirements
-4. **Notification**: Email installer about missing documents or successful submission
 
 
 ---
@@ -700,25 +671,9 @@ The bulk upload flow simplifies document submission for installers:
 │ assigned_validator_id │ beneficiary_name       │ beneficiary_address │
 │ beneficiary_city      │ beneficiary_postal_code│ beneficiary_email   │
 │ beneficiary_phone     │ precarity_status       │ confidence_score    │
-│ cumac_value           │ submitted_at           │ validated_at        │
-│ validated_by          │ processing_time_ms     │ created_at          │
-│ updated_at            │                        │                     │
+│ submitted_at          │ validated_at           │ validated_by        │
+│ processing_time_ms    │ created_at             │ updated_at          │
 └─────────────────────────────────────────────────────────────────────┘
-         │
-         ├─────────────────────────────────────────────────────────────┐
-         │ 1:N                                                         │ 1:N
-         ▼                                                             ▼
-┌─────────────────────────────────────────┐   ┌───────────────────────────────────┐
-│           dossier_processes              │   │         project_timelines         │
-├─────────────────────────────────────────┤   ├───────────────────────────────────┤
-│ id                  │ dossier_id (FK)   │   │ id              │ dossier_id (FK) │
-│ process_id (FK)     │ process_code      │   │ dossier_process_id (FK)           │
-│ process_name        │ status            │   │ devis_date      │ signature_date  │
-│ confidence_score    │ cumac_value       │   │ works_start_date│ works_end_date  │
-│ processing_time_ms  │ validated_at      │   │ invoice_date    │ created_at      │
-│ validated_by        │ created_at        │   │ updated_at      │                 │
-│ updated_at          │                   │   └───────────────────────────────────┘
-└─────────────────────────────────────────┘
          │
          │ 1:N
          ▼
@@ -726,10 +681,10 @@ The bulk upload flow simplifies document submission for installers:
 │                              documents                               │
 ├─────────────────────────────────────────────────────────────────────┤
 │ id                    │ dossier_id (FK)        │ document_type_id    │
-│ dossier_process_id    │ filename               │ storage_path        │
-│ mime_type             │ file_size              │ page_count          │
-│ processing_status     │ classification_confidence│ uploaded_at       │
-│ processed_at          │ created_at             │ updated_at          │
+│ filename              │ storage_path           │ mime_type           │
+│ file_size             │ page_count             │ processing_status   │
+│ classification_confidence │ uploaded_at        │ processed_at        │
+│ created_at            │ updated_at             │                     │
 └─────────────────────────────────────────────────────────────────────┘
          │
          │ 1:N
@@ -832,43 +787,10 @@ CREATE TABLE dossiers (
     beneficiary_phone VARCHAR(20),
     precarity_status VARCHAR(50),
     confidence_score DECIMAL(5,4),
-    cumac_value DECIMAL(12,2),              -- kWh cumac (energy savings value)
     submitted_at TIMESTAMP,
     validated_at TIMESTAMP,
     validated_by UUID REFERENCES users(id),
     processing_time_ms INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Project Timeline table (milestones for each dossier)
-CREATE TABLE project_timelines (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    dossier_id UUID REFERENCES dossiers(id) ON DELETE CASCADE NOT NULL,
-    dossier_process_id UUID,                 -- Optional FK to specific process
-    devis_date DATE,                         -- Quote/estimate date
-    signature_date DATE,                     -- Contract signing date
-    works_start_date DATE,                   -- Works start date
-    works_end_date DATE,                     -- Works completion date
-    invoice_date DATE,                       -- Invoice date
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(dossier_id, dossier_process_id)
-);
-
--- Dossier Processes table (supports multiple CEE processes per dossier)
-CREATE TABLE dossier_processes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    dossier_id UUID REFERENCES dossiers(id) ON DELETE CASCADE NOT NULL,
-    process_id UUID REFERENCES processes(id) NOT NULL,
-    process_code VARCHAR(50) NOT NULL,
-    process_name VARCHAR(255) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'draft',
-    confidence_score DECIMAL(5,4),
-    cumac_value DECIMAL(12,2),               -- kWh cumac for this specific process
-    processing_time_ms INTEGER,
-    validated_at TIMESTAMP,
-    validated_by UUID REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -1072,10 +994,6 @@ CREATE INDEX idx_dossiers_status ON dossiers(status);
 CREATE INDEX idx_dossiers_installer ON dossiers(installer_id);
 CREATE INDEX idx_dossiers_validator ON dossiers(assigned_validator_id);
 CREATE INDEX idx_dossiers_submitted ON dossiers(submitted_at);
-CREATE INDEX idx_dossier_processes_dossier ON dossier_processes(dossier_id);
-CREATE INDEX idx_dossier_processes_status ON dossier_processes(status);
-CREATE INDEX idx_dossier_processes_code ON dossier_processes(process_code);
-CREATE INDEX idx_project_timelines_dossier ON project_timelines(dossier_id);
 CREATE INDEX idx_documents_dossier ON documents(dossier_id);
 CREATE INDEX idx_documents_status ON documents(processing_status);
 CREATE INDEX idx_extracted_fields_dossier ON extracted_fields(dossier_id);
@@ -2652,288 +2570,9 @@ passlib[bcrypt]
 | `ValidationPipeline` | Field validation → Rule execution | document-rules, cross-doc-rules, confidence |
 | `FeedbackLoop` | Human corrections → Training data | process-correction, update-dataset |
 | `BillingWorkflow` | Approval → Invoice → Payment | calculate-premium, generate-invoice |
-| `BulkUploadFlow` | Bulk upload → Split → Detect → Validate → Notify | split-pdf, detect-process, validate-completeness |
 | `Maintenance` | Scheduled tasks | cleanup, sync-search, verify-rge |
 
-### 7. Bulk Upload Workflow (Event-Driven)
-
-The bulk upload workflow enables installers to submit documents without knowing the exact CEE process. The system automatically detects processes and validates document completeness.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           BULK UPLOAD WORKFLOW                                   │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                  │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌────────────┐ │
-│  │   Installer  │     │   API Step   │     │ Event Steps  │     │   Email    │ │
-│  │   Uploads    │────▶│  bulk_upload │────▶│  (Pipeline)  │────▶│   Notify   │ │
-│  │   Files      │     │   .step.py   │     │              │     │            │ │
-│  └──────────────┘     └──────────────┘     └──────────────┘     └────────────┘ │
-│                              │                    │                             │
-│                              │                    ▼                             │
-│                              │         ┌──────────────────────┐                 │
-│                              │         │ 1. split_pdf_document │                │
-│                              │         │    - Detect page      │                │
-│                              │         │      boundaries       │                │
-│                              │         │    - Create child     │                │
-│                              │         │      documents        │                │
-│                              │         └──────────┬───────────┘                 │
-│                              │                    ▼                             │
-│                              │         ┌──────────────────────┐                 │
-│                              │         │ 2. classify_document  │                │
-│                              │         │    - AI classification│                │
-│                              │         │    - Document type    │                │
-│                              │         └──────────┬───────────┘                 │
-│                              │                    ▼                             │
-│                              │         ┌──────────────────────┐                 │
-│                              │         │ 3. detect_process    │                │
-│                              │         │    - Scan attestation │                │
-│                              │         │    - Extract CEE codes│                │
-│                              │         │    - Match processes  │                │
-│                              │         └──────────┬───────────┘                 │
-│                              │                    ▼                             │
-│                              │         ┌──────────────────────┐                 │
-│                              │         │ 4. validate_complete │                │
-│                              │         │    - Check required   │                │
-│                              │         │      docs per process │                │
-│                              │         │    - Identify missing │                │
-│                              │         └──────────┬───────────┘                 │
-│                              │                    ▼                             │
-│                              │         ┌──────────────────────┐                 │
-│                              │         │ 5. send_notification │                │
-│                              │         │    - Missing docs?    │                │
-│                              │         │      → Email installer│                │
-│                              │         │    - Complete?        │                │
-│                              │         │      → Ready for      │                │
-│                              │         │        validation     │                │
-│                              │         └──────────────────────┘                 │
-│                                                                                  │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
-
-#### Bulk Upload Event Steps
-
-```python
-# steps/events/bulk_upload/split_pdf_document.step.py
-
-config = {
-    "type": "event",
-    "name": "SplitPDFDocument",
-    "description": "Split multi-page PDF into individual documents",
-    "subscribes": ["bulk_upload.document.received"],
-    "emits": ["bulk_upload.document.split", "bulk_upload.document.split_failed"],
-    "flows": ["BulkUploadFlow"]
-}
-
-async def handler(event, ctx):
-    """Split multi-page PDF based on document boundaries."""
-    document_id = event["data"]["document_id"]
-
-    # Get document from storage
-    document = await get_document(document_id)
-
-    if document["page_count"] <= 1:
-        # Single page, no split needed
-        await ctx.emit({
-            "topic": "bulk_upload.document.split",
-            "data": {"document_id": document_id, "split_documents": [document_id]}
-        })
-        return
-
-    # Use AI to detect document boundaries
-    ai_provider = await get_ai_provider(ctx, "classification")
-    boundaries = await ai_provider.detect_document_boundaries(document["content"])
-
-    # Split and store individual documents
-    split_docs = await split_pdf_at_boundaries(document, boundaries)
-
-    await ctx.emit({
-        "topic": "bulk_upload.document.split",
-        "data": {
-            "original_document_id": document_id,
-            "split_documents": [doc["id"] for doc in split_docs]
-        }
-    })
-```
-
-```python
-# steps/events/bulk_upload/detect_process_codes.step.py
-
-config = {
-    "type": "event",
-    "name": "DetectProcessCodes",
-    "description": "Detect CEE process codes from Attestation sur l'honneur",
-    "subscribes": ["bulk_upload.document.classified"],
-    "emits": ["bulk_upload.process.detected"],
-    "flows": ["BulkUploadFlow"]
-}
-
-async def handler(event, ctx):
-    """Extract CEE process codes from attestation documents."""
-    dossier_id = event["data"]["dossier_id"]
-    documents = event["data"]["documents"]
-
-    detected_processes = []
-
-    for doc in documents:
-        if doc["type"] == "attestation_honneur":
-            # Extract text and look for process codes
-            text = doc.get("ocr_text", "")
-
-            # Pattern matching for CEE codes (BAR-TH-XXX, BAR-EN-XXX, etc.)
-            codes = extract_cee_codes(text)
-
-            for code in codes:
-                process = await get_process_by_code(code)
-                if process:
-                    detected_processes.append({
-                        "code": code,
-                        "name": process["name"],
-                        "confidence": 0.95,
-                        "detected_from": doc["id"]
-                    })
-
-    await ctx.emit({
-        "topic": "bulk_upload.process.detected",
-        "data": {
-            "dossier_id": dossier_id,
-            "detected_processes": detected_processes
-        }
-    })
-```
-
-```python
-# steps/events/bulk_upload/validate_document_completeness.step.py
-
-config = {
-    "type": "event",
-    "name": "ValidateDocumentCompleteness",
-    "description": "Check if all required documents are present for detected processes",
-    "subscribes": ["bulk_upload.process.detected"],
-    "emits": ["bulk_upload.validation.complete", "bulk_upload.documents.missing"],
-    "flows": ["BulkUploadFlow"]
-}
-
-async def handler(event, ctx):
-    """Validate that all required documents are present."""
-    dossier_id = event["data"]["dossier_id"]
-    detected_processes = event["data"]["detected_processes"]
-
-    # Get all documents in dossier
-    documents = await get_dossier_documents(dossier_id)
-    doc_types = {doc["type"] for doc in documents}
-
-    missing_documents = []
-
-    for process in detected_processes:
-        # Get required documents for this process
-        required_docs = await get_required_documents(process["code"])
-
-        for req_doc in required_docs:
-            if req_doc["type"] not in doc_types:
-                missing_documents.append({
-                    "document_type": req_doc["type"],
-                    "document_name": req_doc["name"],
-                    "process_code": process["code"],
-                    "is_required": req_doc["is_required"]
-                })
-
-    if missing_documents:
-        await ctx.emit({
-            "topic": "bulk_upload.documents.missing",
-            "data": {
-                "dossier_id": dossier_id,
-                "missing_documents": missing_documents
-            }
-        })
-    else:
-        await ctx.emit({
-            "topic": "bulk_upload.validation.complete",
-            "data": {
-                "dossier_id": dossier_id,
-                "status": "ready_for_validation"
-            }
-        })
-```
-
-```python
-# steps/events/bulk_upload/send_missing_documents_email.step.py
-
-config = {
-    "type": "event",
-    "name": "SendMissingDocumentsEmail",
-    "description": "Send email to installer about missing documents",
-    "subscribes": ["bulk_upload.documents.missing"],
-    "emits": ["notification.email.sent"],
-    "flows": ["BulkUploadFlow"]
-}
-
-async def handler(event, ctx):
-    """Send email notification about missing documents."""
-    dossier_id = event["data"]["dossier_id"]
-    missing_documents = event["data"]["missing_documents"]
-
-    # Get dossier and installer info
-    dossier = await get_dossier(dossier_id)
-    installer = await get_installer(dossier["installer_id"])
-
-    # Prepare email content
-    email_content = render_missing_documents_email(
-        installer_name=installer["contact_name"],
-        dossier_reference=dossier["reference"],
-        missing_documents=missing_documents,
-        upload_url=f"/portal/dossiers/{dossier_id}/add-documents"
-    )
-
-    # Send email
-    await send_email(
-        to=dossier["notification_email"] or installer["contact_email"],
-        subject=f"Documents manquants - Dossier {dossier['reference']}",
-        html_content=email_content
-    )
-
-    # Update dossier status
-    await update_dossier_status(dossier_id, "awaiting_documents")
-
-    await ctx.emit({
-        "topic": "notification.email.sent",
-        "data": {
-            "dossier_id": dossier_id,
-            "email_type": "missing_documents",
-            "recipient": dossier["notification_email"]
-        }
-    })
-```
-
-#### Bulk Upload Event Topics
-
-```python
-# Additional event topics for bulk upload workflow
-
-class BulkUploadEventTopics:
-    """Event topics for bulk upload workflow."""
-
-    # Upload events
-    BULK_UPLOAD_STARTED = "bulk_upload.started"
-    DOCUMENT_RECEIVED = "bulk_upload.document.received"
-    DOCUMENT_SPLIT = "bulk_upload.document.split"
-    DOCUMENT_SPLIT_FAILED = "bulk_upload.document.split_failed"
-    DOCUMENT_CLASSIFIED = "bulk_upload.document.classified"
-
-    # Process detection events
-    PROCESS_DETECTED = "bulk_upload.process.detected"
-    PROCESS_DETECTION_FAILED = "bulk_upload.process.detection_failed"
-
-    # Validation events
-    VALIDATION_COMPLETE = "bulk_upload.validation.complete"
-    DOCUMENTS_MISSING = "bulk_upload.documents.missing"
-
-    # Notification events
-    MISSING_DOCS_EMAIL_SENT = "bulk_upload.notification.missing_docs_sent"
-    UPLOAD_COMPLETE_EMAIL_SENT = "bulk_upload.notification.complete_sent"
-```
-
-### 8. Event Topics
+### 7. Event Topics
 
 ```python
 # config/events.py - Event topic constants

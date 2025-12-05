@@ -237,4 +237,4 @@ Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## 📄 License
 
-Proprietary - Valoren.org.
+Proprietary - Valoren.org
