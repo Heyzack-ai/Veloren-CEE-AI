@@ -320,18 +320,23 @@ export default function UploadPage() {
             </Card>
           )}
 
-          {/* Add More Processes */}
+          {/* Add More Processes (Optional) */}
           <Card>
             <CardContent className="p-4">
               {!showProcessSearch ? (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowProcessSearch(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter une autre opération CEE
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setShowProcessSearch(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter une autre opération CEE (optionnel)
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Les opérations seront détectées automatiquement si non spécifiées
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -434,17 +439,23 @@ export default function UploadPage() {
                 </div>
 
                 <div className="py-2 border-b">
-                  <span className="text-muted-foreground">Opérations CEE sélectionnées</span>
+                  <span className="text-muted-foreground">Opérations CEE</span>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedProcessCodes.map((code) => {
-                      const process = detectedProcesses.find((p) => p.code === code) ||
-                        allProcesses.find((p) => p.code === code);
-                      return (
-                        <Badge key={code} variant="secondary">
-                          {code} - {process?.name || 'Inconnu'}
-                        </Badge>
-                      );
-                    })}
+                    {selectedProcessCodes.length > 0 ? (
+                      selectedProcessCodes.map((code) => {
+                        const process = detectedProcesses.find((p) => p.code === code) ||
+                          allProcesses.find((p) => p.code === code);
+                        return (
+                          <Badge key={code} variant="secondary">
+                            {code} - {process?.name || 'Inconnu'}
+                          </Badge>
+                        );
+                      })
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">
+                        Détection automatique depuis l'Attestation sur l'honneur
+                      </span>
+                    )}
                   </div>
                 </div>
 
