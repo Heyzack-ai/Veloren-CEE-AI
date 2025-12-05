@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { StatusBadge } from '@/components/status-badge';
+import { ProcessTabs } from '@/components/process-tabs';
 import { PDFViewer } from '@/components/pdf-viewer';
 import { DocumentSwitcher } from '@/components/document-switcher';
 import { FieldEditor } from '@/components/field-editor';
@@ -39,7 +41,7 @@ import {
   Send,
 } from 'lucide-react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 
 type PageProps = {
   params: { id: string };
@@ -47,7 +49,31 @@ type PageProps = {
 
 export default function ValidationWorkspacePage({ params }: PageProps) {
   const { id } = params;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const processIdFromUrl = searchParams.get('processId');
+
   const dossier = mockDossiers.find((d) => d.id === id);
+
+  // State for active process
+  const [activeProcessId, setActiveProcessId] = useState<string | null>(processIdFromUrl);
+
+  // Get the active process
+  const activeProcess = useMemo(() => {
+    if (!dossier?.processes || dossier.processes.length === 0) {
+      return null;
+    }
+    if (activeProcessId) {
+      return dossier.processes.find(p => p.id === activeProcessId) || dossier.processes[0];
+    }
+    return dossier.processes[0];
+  }, [dossier?.processes, activeProcessId]);
+
+  // Handle process change - update URL and state
+  const handleProcessChange = (processId: string) => {
+    setActiveProcessId(processId);
+    router.replace(`/validation/${id}?processId=${processId}`);
+  };
 
   const [activeDocumentId, setActiveDocumentId] = useState(mockPDFDocuments[0].id);
   const [requestDocsDialogOpen, setRequestDocsDialogOpen] = useState(false);
@@ -124,8 +150,23 @@ export default function ValidationWorkspacePage({ params }: PageProps) {
     { type: 'Champs', label: 'Fiche CHAMPS' },
   ];
 
+  // Get current process info for display
+  const currentProcessCode = activeProcess?.processCode || dossier.processCode;
+  const currentProcessName = activeProcess?.processName || dossier.processName;
+  const currentStatus = activeProcess?.status || dossier.status;
+  const currentConfidence = activeProcess?.confidence || dossier.confidence;
+
   return (
     <div className="h-screen flex flex-col">
+      {/* Process Tabs - Show when dossier has multiple processes */}
+      {dossier.processes && dossier.processes.length > 1 && (
+        <ProcessTabs
+          processes={dossier.processes}
+          activeProcessId={activeProcess?.id || dossier.processes[0].id}
+          onProcessChange={handleProcessChange}
+        />
+      )}
+
       {/* Header */}
       <div className="border-b bg-card">
         <div className="p-4 space-y-3">
@@ -133,15 +174,15 @@ export default function ValidationWorkspacePage({ params }: PageProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" asChild>
-                <Link href={`/dossiers/${id}`}>
+                <Link href={`/dossiers/${id}${activeProcess ? `?processId=${activeProcess.id}` : ''}`}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Retour
                 </Link>
               </Button>
               <div>
-                <h1 className="text-xl font-bold">Valider le dossier</h1>
+                <h1 className="text-xl font-bold">Valider le processus</h1>
                 <p className="text-sm text-muted-foreground">
-                  {dossier.reference} - {dossier.beneficiary.name}
+                  {dossier.reference} - {currentProcessCode} - {dossier.beneficiary.name}
                 </p>
               </div>
             </div>
@@ -160,7 +201,7 @@ export default function ValidationWorkspacePage({ params }: PageProps) {
               </Button>
               <Button onClick={handleApprove}>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Approuver le dossier
+                Approuver le processus
               </Button>
             </div>
           </div>
@@ -168,12 +209,16 @@ export default function ValidationWorkspacePage({ params }: PageProps) {
           {/* Status Row */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Processus:</span>
+              <Badge variant="outline">{currentProcessCode}</Badge>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Statut:</span>
-              <StatusBadge status={dossier.status} />
+              <StatusBadge status={currentStatus} />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Confiance:</span>
-              <Badge variant="secondary">{dossier.confidence}%</Badge>
+              <Badge variant="secondary">{currentConfidence}%</Badge>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Problèmes:</span>

@@ -1,10 +1,12 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/status-badge';
 import { StatusTimeline } from '@/components/status-timeline';
+import { ProcessTabs } from '@/components/process-tabs';
 import { mockDossiers } from '@/lib/mock-data/dossiers';
 import { DossierMilestone, ValidationFeedback } from '@/types/installer';
 import {
@@ -29,10 +31,24 @@ type PageProps = {
 export default function InstallerDossierDetailPage({ params }: PageProps) {
   const { id } = params;
   const dossier = mockDossiers.find((d) => d.id === id);
+  const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
 
   if (!dossier) {
     notFound();
   }
+
+  // Get active process
+  const activeProcess = useMemo(() => {
+    if (!dossier.processes || dossier.processes.length === 0) return null;
+    if (activeProcessId) {
+      return dossier.processes.find(p => p.id === activeProcessId) || dossier.processes[0];
+    }
+    return dossier.processes[0];
+  }, [dossier.processes, activeProcessId]);
+
+  const currentStatus = activeProcess?.status || dossier.status;
+  const currentProcessName = activeProcess?.processName || dossier.processName;
+  const currentProcessCode = activeProcess?.processCode || dossier.processCode;
 
   // Mock milestones
   const milestones: DossierMilestone[] = [
@@ -103,6 +119,16 @@ export default function InstallerDossierDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
+      {/* Process Tabs - Show when dossier has multiple processes */}
+      {dossier.processes && dossier.processes.length > 1 && (
+        <ProcessTabs
+          processes={dossier.processes}
+          activeProcessId={activeProcess?.id || dossier.processes[0].id}
+          onProcessChange={setActiveProcessId}
+          className="-mx-6 -mt-6 mb-6"
+        />
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/my-dossiers" className="hover:text-foreground">
@@ -117,9 +143,9 @@ export default function InstallerDossierDetailPage({ params }: PageProps) {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-heading font-bold">{dossier.reference}</h1>
-            <StatusBadge status={dossier.status} />
+            <StatusBadge status={currentStatus} />
           </div>
-          <p className="text-muted-foreground">{dossier.processName}</p>
+          <p className="text-muted-foreground">{currentProcessCode} - {currentProcessName}</p>
         </div>
         <Button variant="outline" asChild>
           <Link href="/my-dossiers">

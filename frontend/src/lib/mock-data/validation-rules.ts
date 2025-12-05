@@ -10,7 +10,7 @@ export type ValidationRule = {
   severity: RuleSeverity;
   appliesTo: {
     documentTypes?: string[];
-    processes?: string[];
+    processTypes?: string[]; // Array of process IDs (multi-select)
   };
   isActive: boolean;
   autoReject: boolean;
@@ -34,7 +34,7 @@ export const mockValidationRules: ValidationRule[] = [
     severity: 'error',
     appliesTo: {
       documentTypes: ['DEVIS', 'FACTURE', 'CDC'],
-      processes: ['all'],
+      processTypes: ['proc-1', 'proc-3'], // BAR-TH-171, BAR-TH-106
     },
     isActive: true,
     autoReject: false,
@@ -56,7 +56,7 @@ export const mockValidationRules: ValidationRule[] = [
     severity: 'error',
     appliesTo: {
       documentTypes: ['DEVIS', 'FACTURE'],
-      processes: ['all'],
+      processTypes: [], // Empty means all processes
     },
     isActive: true,
     autoReject: false,
@@ -78,7 +78,7 @@ export const mockValidationRules: ValidationRule[] = [
     severity: 'error',
     appliesTo: {
       documentTypes: ['AH', 'CDC'],
-      processes: ['all'],
+      processTypes: [], // Empty means all processes
     },
     isActive: true,
     autoReject: false,
@@ -100,7 +100,7 @@ export const mockValidationRules: ValidationRule[] = [
     severity: 'error',
     appliesTo: {
       documentTypes: ['DEVIS'],
-      processes: ['BAR-TH-171'],
+      processTypes: ['proc-1'], // BAR-TH-171
     },
     isActive: true,
     autoReject: false,
@@ -122,7 +122,7 @@ export const mockValidationRules: ValidationRule[] = [
     severity: 'warning',
     appliesTo: {
       documentTypes: ['FACTURE'],
-      processes: ['all'],
+      processTypes: [], // Empty means all processes
     },
     isActive: true,
     autoReject: false,
@@ -144,7 +144,7 @@ export const mockValidationRules: ValidationRule[] = [
     severity: 'warning',
     appliesTo: {
       documentTypes: ['DEVIS'],
-      processes: ['all'],
+      processTypes: [], // Empty means all processes
     },
     isActive: true,
     autoReject: false,
@@ -165,7 +165,7 @@ export const mockValidationRules: ValidationRule[] = [
     type: 'global',
     severity: 'error',
     appliesTo: {
-      processes: ['all'],
+      processTypes: [], // Empty means all processes
     },
     isActive: true,
     autoReject: true,
@@ -187,7 +187,7 @@ export const mockValidationRules: ValidationRule[] = [
     severity: 'warning',
     appliesTo: {
       documentTypes: ['DEVIS', 'AH', 'CDC'],
-      processes: ['all'],
+      processTypes: ['proc-1', 'proc-2', 'proc-3'], // Multiple processes
     },
     isActive: true,
     autoReject: false,

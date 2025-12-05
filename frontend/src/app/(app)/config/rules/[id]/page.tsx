@@ -55,8 +55,9 @@ export default function RuleBuilderPage({ params }: PageProps) {
     rule?.appliesTo.documentTypes || []
   );
 
-  const [selectedProcessId, setSelectedProcessId] = useState<string>(
-    rule?.appliesTo.processes?.[0] || 'all'
+  // Multi-select for process types
+  const [selectedProcessTypes, setSelectedProcessTypes] = useState<string[]>(
+    rule?.appliesTo.processTypes || []
   );
 
   const [builderMode, setBuilderMode] = useState<'visual' | 'expression'>('visual');
@@ -67,19 +68,27 @@ export default function RuleBuilderPage({ params }: PageProps) {
 
   const [expandedDocTypes, setExpandedDocTypes] = useState<Set<string>>(new Set());
 
-  // Get document types available for the selected process
+  // Get document types available based on selected processes
   const availableDocumentTypes = useMemo(() => {
-    if (selectedProcessId === 'all') {
+    // If no processes selected, show all document types
+    if (selectedProcessTypes.length === 0) {
       return mockDocumentTypes;
     }
-    const process = mockProcesses.find(p => p.id === selectedProcessId);
-    if (!process) return mockDocumentTypes;
-    
-    const processDocTypeNames = process.requiredDocuments.map(d => d.documentType);
-    return mockDocumentTypes.filter(dt => 
-      processDocTypeNames.includes(dt.name) || processDocTypeNames.includes(dt.code)
+
+    // Get all document types from selected processes
+    const selectedProcesses = mockProcesses.filter(p => selectedProcessTypes.includes(p.id));
+    const allDocTypeNames = new Set<string>();
+
+    selectedProcesses.forEach(process => {
+      process.requiredDocuments.forEach(d => {
+        allDocTypeNames.add(d.documentType);
+      });
+    });
+
+    return mockDocumentTypes.filter(dt =>
+      allDocTypeNames.has(dt.name) || allDocTypeNames.has(dt.code)
     );
-  }, [selectedProcessId]);
+  }, [selectedProcessTypes]);
 
   // Get all fields from selected document types
   const availableFields = useMemo(() => {
@@ -270,35 +279,48 @@ export default function RuleBuilderPage({ params }: PageProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Process Types Multi-Select */}
               <div className="space-y-2">
-                <Label htmlFor="processes">{t('ruleWizard.scope.process')}</Label>
-                <Select
-                  value={selectedProcessId}
-                  onValueChange={(value) => {
-                    setSelectedProcessId(value);
-                    // Reset document types when process changes
-                    setSelectedDocTypes([]);
-                  }}
-                >
-                  <SelectTrigger id="processes">
-                    <SelectValue placeholder={t('ruleWizard.scope.processPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('ruleWizard.scope.allProcesses')}</SelectItem>
-                    {mockProcesses.map((process) => (
-                      <SelectItem key={process.id} value={process.id}>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{process.code}</span>
-                          <span className="text-muted-foreground">- {process.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedProcessId !== 'all' && (
-                  <p className="text-xs text-muted-foreground">
-                    {t('ruleWizard.scope.documentTypesAvailable', { count: mockProcesses.find(p => p.id === selectedProcessId)?.requiredDocuments.length || 0 })}
+                <Label>{t('ruleWizard.scope.processTypes')}</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  {t('ruleWizard.scope.processTypesHint')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {mockProcesses.map((process) => (
+                    <Badge
+                      key={process.id}
+                      variant={selectedProcessTypes.includes(process.id) ? 'default' : 'outline'}
+                      className="cursor-pointer transition-colors hover:bg-primary/90"
+                      onClick={() => {
+                        setSelectedProcessTypes(prev =>
+                          prev.includes(process.id)
+                            ? prev.filter(id => id !== process.id)
+                            : [...prev, process.id]
+                        );
+                      }}
+                    >
+                      <span className="font-medium">{process.code}</span>
+                    </Badge>
+                  ))}
+                </div>
+                {selectedProcessTypes.length === 0 && (
+                  <p className="text-xs text-blue-600 mt-2">
+                    {t('ruleWizard.scope.allProcessesSelected')}
                   </p>
+                )}
+                {selectedProcessTypes.length > 0 && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      {t('ruleWizard.scope.selectedProcessCount', { count: selectedProcessTypes.length })}
+                    </p>
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => setSelectedProcessTypes([])}
+                    >
+                      {t('ruleWizard.scope.clearSelection')}
+                    </button>
+                  </div>
                 )}
               </div>
 

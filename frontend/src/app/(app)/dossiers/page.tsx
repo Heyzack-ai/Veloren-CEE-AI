@@ -205,8 +205,21 @@ export default function DossiersPage() {
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    <div className="font-medium">{dossier.processCode}</div>
-                    <div className="text-muted-foreground">{dossier.processName}</div>
+                    {dossier.processes && dossier.processes.length > 1 ? (
+                      <>
+                        <div className="font-medium">
+                          {dossier.processes.length} processus
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {dossier.processes.map(p => p.processCode).join(', ')}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-medium">{dossier.processCode}</div>
+                        <div className="text-muted-foreground">{dossier.processName}</div>
+                      </>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>

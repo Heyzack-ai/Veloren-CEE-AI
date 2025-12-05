@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,13 +8,12 @@ import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StatusBadge } from '@/components/status-badge';
 import { ConfidenceIndicator } from '@/components/confidence-indicator';
+import { ProcessTabs } from '@/components/process-tabs';
 import { mockDossiers } from '@/lib/mock-data/dossiers';
 import { useAuth } from '@/lib/auth-context';
-import { 
-  ArrowLeft, 
-  Edit, 
-  Trash2, 
-  FileText, 
+import {
+  Trash2,
+  FileText,
   Download,
   Eye,
   CheckCircle,
@@ -35,12 +35,35 @@ export default function DossierDetailPage({ params }: PageProps) {
   const { user } = useAuth();
   const dossier = mockDossiers.find(d => d.id === id);
 
+  // Initialize with first process ID
+  const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
+
   if (!dossier) {
     notFound();
   }
 
+  // Get the active process or default to first
+  const activeProcess = useMemo(() => {
+    if (!dossier.processes || dossier.processes.length === 0) {
+      return null;
+    }
+    if (activeProcessId) {
+      return dossier.processes.find(p => p.id === activeProcessId) || dossier.processes[0];
+    }
+    return dossier.processes[0];
+  }, [dossier.processes, activeProcessId]);
+
   const isAdmin = user?.role === 'administrator';
   const isValidator = user?.role === 'validator';
+
+  // Use active process data when available, fallback to legacy dossier data
+  const currentStatus = activeProcess?.status || dossier.status;
+  const currentConfidence = activeProcess?.confidence || dossier.confidence;
+  const currentProcessCode = activeProcess?.processCode || dossier.processCode;
+  const currentProcessName = activeProcess?.processName || dossier.processName;
+  const currentProcessingTime = activeProcess?.processingTime || dossier.processingTime;
+  const currentCumacValue = activeProcess?.cumacValue || dossier.cumacValue;
+  const currentProjectTimeline = activeProcess?.projectTimeline || dossier.projectTimeline;
 
   // Mock extracted data
   const extractedData = {
@@ -90,6 +113,16 @@ export default function DossierDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
+      {/* Process Tabs - Show when dossier has multiple processes */}
+      {dossier.processes && dossier.processes.length > 1 && (
+        <ProcessTabs
+          processes={dossier.processes}
+          activeProcessId={activeProcess?.id || dossier.processes[0].id}
+          onProcessChange={setActiveProcessId}
+          className="-mx-6 -mt-6 mb-6"
+        />
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/dashboard" className="hover:text-foreground">Accueil</Link>
@@ -104,32 +137,26 @@ export default function DossierDetailPage({ params }: PageProps) {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-heading font-bold">{dossier.reference}</h1>
-            <StatusBadge status={dossier.status} />
+            <StatusBadge status={currentStatus} />
           </div>
           <p className="text-muted-foreground">
-            {dossier.processName} • Soumis le {format(dossier.submittedAt, 'PPP', { locale: fr })}
+            {currentProcessName} • Soumis le {format(dossier.submittedAt, 'PPP', { locale: fr })}
           </p>
         </div>
         <div className="flex gap-2">
-          {(isAdmin || isValidator) && dossier.status === 'awaiting_review' && (
+          {(isAdmin || isValidator) && (
             <Button asChild>
-              <Link href={`/validation/${dossier.id}`}>
+              <Link href={`/validation/${dossier.id}${activeProcess ? `?processId=${activeProcess.id}` : ''}`}>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Valider
               </Link>
             </Button>
           )}
           {isAdmin && (
-            <>
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </Button>
-              <Button variant="outline" className="text-red-600">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </Button>
-            </>
+            <Button variant="outline" className="text-red-600">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Supprimer
+            </Button>
           )}
         </div>
       </div>
@@ -148,11 +175,11 @@ export default function DossierDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Processus</p>
-                <p className="font-medium">{dossier.processCode} - {dossier.processName}</p>
+                <p className="font-medium">{currentProcessCode} - {currentProcessName}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Statut</p>
-                <StatusBadge status={dossier.status} />
+                <StatusBadge status={currentStatus} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Installateur</p>
@@ -182,14 +209,61 @@ export default function DossierDetailPage({ params }: PageProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Score de confiance</p>
-                <ConfidenceIndicator value={dossier.confidence} />
+                <ConfidenceIndicator value={currentConfidence} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Temps de traitement</p>
-                <p className="font-medium">{dossier.processingTime} minutes</p>
+                <p className="font-medium">{currentProcessingTime} minutes</p>
               </div>
+              {currentCumacValue && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Valeur CUMAC</p>
+                  <p className="font-medium text-lg text-green-700">
+                    {currentCumacValue.toLocaleString('fr-FR')} kWh cumac
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Project Timeline */}
+          {currentProjectTimeline && (
+            <div className="mt-6 pt-6 border-t">
+              <h4 className="font-medium mb-4 text-muted-foreground">Chronologie du projet</h4>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {currentProjectTimeline.devisDate && (
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Devis</p>
+                    <p className="font-medium text-sm">{format(currentProjectTimeline.devisDate, 'dd/MM/yyyy', { locale: fr })}</p>
+                  </div>
+                )}
+                {currentProjectTimeline.signatureDate && (
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Signature</p>
+                    <p className="font-medium text-sm">{format(currentProjectTimeline.signatureDate, 'dd/MM/yyyy', { locale: fr })}</p>
+                  </div>
+                )}
+                {currentProjectTimeline.worksStartDate && (
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Début travaux</p>
+                    <p className="font-medium text-sm">{format(currentProjectTimeline.worksStartDate, 'dd/MM/yyyy', { locale: fr })}</p>
+                  </div>
+                )}
+                {currentProjectTimeline.worksEndDate && (
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Fin travaux</p>
+                    <p className="font-medium text-sm">{format(currentProjectTimeline.worksEndDate, 'dd/MM/yyyy', { locale: fr })}</p>
+                  </div>
+                )}
+                {currentProjectTimeline.invoiceDate && (
+                  <div className="text-center p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground mb-1">Facture</p>
+                    <p className="font-medium text-sm">{format(currentProjectTimeline.invoiceDate, 'dd/MM/yyyy', { locale: fr })}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

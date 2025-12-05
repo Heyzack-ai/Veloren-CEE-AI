@@ -700,9 +700,25 @@ The bulk upload flow simplifies document submission for installers:
 │ assigned_validator_id │ beneficiary_name       │ beneficiary_address │
 │ beneficiary_city      │ beneficiary_postal_code│ beneficiary_email   │
 │ beneficiary_phone     │ precarity_status       │ confidence_score    │
-│ submitted_at          │ validated_at           │ validated_by        │
-│ processing_time_ms    │ created_at             │ updated_at          │
+│ cumac_value           │ submitted_at           │ validated_at        │
+│ validated_by          │ processing_time_ms     │ created_at          │
+│ updated_at            │                        │                     │
 └─────────────────────────────────────────────────────────────────────┘
+         │
+         ├─────────────────────────────────────────────────────────────┐
+         │ 1:N                                                         │ 1:N
+         ▼                                                             ▼
+┌─────────────────────────────────────────┐   ┌───────────────────────────────────┐
+│           dossier_processes              │   │         project_timelines         │
+├─────────────────────────────────────────┤   ├───────────────────────────────────┤
+│ id                  │ dossier_id (FK)   │   │ id              │ dossier_id (FK) │
+│ process_id (FK)     │ process_code      │   │ dossier_process_id (FK)           │
+│ process_name        │ status            │   │ devis_date      │ signature_date  │
+│ confidence_score    │ cumac_value       │   │ works_start_date│ works_end_date  │
+│ processing_time_ms  │ validated_at      │   │ invoice_date    │ created_at      │
+│ validated_by        │ created_at        │   │ updated_at      │                 │
+│ updated_at          │                   │   └───────────────────────────────────┘
+└─────────────────────────────────────────┘
          │
          │ 1:N
          ▼
@@ -710,10 +726,10 @@ The bulk upload flow simplifies document submission for installers:
 │                              documents                               │
 ├─────────────────────────────────────────────────────────────────────┤
 │ id                    │ dossier_id (FK)        │ document_type_id    │
-│ filename              │ storage_path           │ mime_type           │
-│ file_size             │ page_count             │ processing_status   │
-│ classification_confidence │ uploaded_at        │ processed_at        │
-│ created_at            │ updated_at             │                     │
+│ dossier_process_id    │ filename               │ storage_path        │
+│ mime_type             │ file_size              │ page_count          │
+│ processing_status     │ classification_confidence│ uploaded_at       │
+│ processed_at          │ created_at             │ updated_at          │
 └─────────────────────────────────────────────────────────────────────┘
          │
          │ 1:N
@@ -816,10 +832,43 @@ CREATE TABLE dossiers (
     beneficiary_phone VARCHAR(20),
     precarity_status VARCHAR(50),
     confidence_score DECIMAL(5,4),
+    cumac_value DECIMAL(12,2),              -- kWh cumac (energy savings value)
     submitted_at TIMESTAMP,
     validated_at TIMESTAMP,
     validated_by UUID REFERENCES users(id),
     processing_time_ms INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Project Timeline table (milestones for each dossier)
+CREATE TABLE project_timelines (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dossier_id UUID REFERENCES dossiers(id) ON DELETE CASCADE NOT NULL,
+    dossier_process_id UUID,                 -- Optional FK to specific process
+    devis_date DATE,                         -- Quote/estimate date
+    signature_date DATE,                     -- Contract signing date
+    works_start_date DATE,                   -- Works start date
+    works_end_date DATE,                     -- Works completion date
+    invoice_date DATE,                       -- Invoice date
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(dossier_id, dossier_process_id)
+);
+
+-- Dossier Processes table (supports multiple CEE processes per dossier)
+CREATE TABLE dossier_processes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dossier_id UUID REFERENCES dossiers(id) ON DELETE CASCADE NOT NULL,
+    process_id UUID REFERENCES processes(id) NOT NULL,
+    process_code VARCHAR(50) NOT NULL,
+    process_name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'draft',
+    confidence_score DECIMAL(5,4),
+    cumac_value DECIMAL(12,2),               -- kWh cumac for this specific process
+    processing_time_ms INTEGER,
+    validated_at TIMESTAMP,
+    validated_by UUID REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -1023,6 +1072,10 @@ CREATE INDEX idx_dossiers_status ON dossiers(status);
 CREATE INDEX idx_dossiers_installer ON dossiers(installer_id);
 CREATE INDEX idx_dossiers_validator ON dossiers(assigned_validator_id);
 CREATE INDEX idx_dossiers_submitted ON dossiers(submitted_at);
+CREATE INDEX idx_dossier_processes_dossier ON dossier_processes(dossier_id);
+CREATE INDEX idx_dossier_processes_status ON dossier_processes(status);
+CREATE INDEX idx_dossier_processes_code ON dossier_processes(process_code);
+CREATE INDEX idx_project_timelines_dossier ON project_timelines(dossier_id);
 CREATE INDEX idx_documents_dossier ON documents(dossier_id);
 CREATE INDEX idx_documents_status ON documents(processing_status);
 CREATE INDEX idx_extracted_fields_dossier ON extracted_fields(dossier_id);

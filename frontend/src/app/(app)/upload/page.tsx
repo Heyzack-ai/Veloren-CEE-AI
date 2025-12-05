@@ -383,25 +383,7 @@ export default function UploadPage() {
             </CardContent>
           </Card>
 
-          {/* Email for notifications */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <Label htmlFor="email" className="whitespace-nowrap">Email (pour notifications)</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="votre@email.com"
-                  value={beneficiaryEmail}
-                  onChange={(e) => setBeneficiaryEmail(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Vous recevrez un email si des documents sont manquants après l'analyse.
-              </p>
-            </CardContent>
-          </Card>
+          {/* Email for notifications removed – notifications will be sent by email */}
 
           {/* Submit Button */}
           <div className="flex justify-end">

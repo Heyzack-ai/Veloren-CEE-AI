@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Edit, Copy, Upload } from 'lucide-react';
 import { mockValidationRules } from '@/lib/mock-data/validation-rules';
+import { mockProcesses } from '@/lib/mock-data/processes';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from '@/lib/i18n';
@@ -115,20 +116,53 @@ export default function ValidationRulesPage() {
     {
       key: 'appliesTo',
       header: t('rules.table.appliesTo'),
-      cell: (rule) => (
-        <div className="flex flex-wrap gap-1">
-          {rule.appliesTo.documentTypes?.slice(0, 2).map((docType) => (
-            <Badge key={docType} variant="secondary" className="text-xs">
-              {docType}
-            </Badge>
-          ))}
-          {rule.appliesTo.documentTypes && rule.appliesTo.documentTypes.length > 2 && (
-            <Badge variant="secondary" className="text-xs">
-              +{rule.appliesTo.documentTypes.length - 2}
-            </Badge>
-          )}
-        </div>
-      ),
+      cell: (rule) => {
+        // Get process codes from IDs
+        const processTypes = rule.appliesTo.processTypes || [];
+        const processCodes = processTypes.map(id => {
+          const process = mockProcesses.find(p => p.id === id);
+          return process?.code || id;
+        });
+
+        return (
+          <div className="flex flex-col gap-1">
+            {/* Document Types */}
+            {rule.appliesTo.documentTypes && rule.appliesTo.documentTypes.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {rule.appliesTo.documentTypes.slice(0, 2).map((docType) => (
+                  <Badge key={docType} variant="secondary" className="text-xs">
+                    {docType}
+                  </Badge>
+                ))}
+                {rule.appliesTo.documentTypes.length > 2 && (
+                  <Badge variant="secondary" className="text-xs">
+                    +{rule.appliesTo.documentTypes.length - 2}
+                  </Badge>
+                )}
+              </div>
+            )}
+            {/* Process Types */}
+            <div className="flex flex-wrap gap-1">
+              {processTypes.length === 0 ? (
+                <span className="text-xs text-muted-foreground">{t('rules.table.allProcesses')}</span>
+              ) : (
+                <>
+                  {processCodes.slice(0, 2).map((code) => (
+                    <Badge key={code} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      {code}
+                    </Badge>
+                  ))}
+                  {processCodes.length > 2 && (
+                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      +{processCodes.length - 2}
+                    </Badge>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'stats',

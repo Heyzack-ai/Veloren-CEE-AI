@@ -1470,6 +1470,17 @@ paths:
                 documentTypeId:
                   type: string
                   format: uuid
+                documentTypes:
+                  type: array
+                  items:
+                    type: string
+                  description: List of document type codes this rule applies to
+                processTypes:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: List of process IDs this rule applies to. Empty array means all processes.
                 expression:
                   type: string
                 errorMessage:
@@ -1541,6 +1552,17 @@ paths:
                   type: string
                 description:
                   type: string
+                documentTypes:
+                  type: array
+                  items:
+                    type: string
+                  description: List of document type codes this rule applies to
+                processTypes:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: List of process IDs this rule applies to. Empty array means all processes.
                 expression:
                   type: string
                 errorMessage:
@@ -3378,6 +3400,109 @@ components:
         fiscalParts:
           type: number
 
+    ProjectTimeline:
+      type: object
+      description: Project timeline milestones for CEE dossier
+      properties:
+        devisDate:
+          type: string
+          format: date-time
+          description: Quote/estimate date
+        signatureDate:
+          type: string
+          format: date-time
+          description: Contract signing date
+        worksStartDate:
+          type: string
+          format: date-time
+          description: Works start date
+        worksEndDate:
+          type: string
+          format: date-time
+          description: Works completion date
+        invoiceDate:
+          type: string
+          format: date-time
+          description: Invoice date
+      example:
+        devisDate: "2025-09-15T00:00:00Z"
+        signatureDate: "2025-09-20T00:00:00Z"
+        worksStartDate: "2025-10-01T00:00:00Z"
+        worksEndDate: "2025-10-15T00:00:00Z"
+        invoiceDate: "2025-10-20T00:00:00Z"
+
+    DossierProcess:
+      type: object
+      description: A CEE process within a dossier (dossiers can have multiple processes)
+      properties:
+        id:
+          type: string
+          format: uuid
+        processCode:
+          type: string
+          description: CEE process code (e.g., BAR-TH-171)
+          example: "BAR-TH-171"
+        processName:
+          type: string
+          description: CEE process name
+          example: "Pompe à chaleur air/eau"
+        status:
+          $ref: '#/components/schemas/DossierStatus'
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: AI confidence score for this process
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        extractedData:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractedField'
+        validationResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationResult'
+        processingTime:
+          type: integer
+          description: Processing time in milliseconds
+        validatedAt:
+          type: string
+          format: date-time
+        validatedBy:
+          type: string
+          format: uuid
+        cumacValue:
+          type: number
+          format: float
+          description: CUMAC value in kWh cumac (Cumulés Actualisés energy savings)
+          example: 35000
+        projectTimeline:
+          $ref: '#/components/schemas/ProjectTimeline'
+      required:
+        - id
+        - processCode
+        - processName
+        - status
+        - confidence
+      example:
+        id: "660e8400-e29b-41d4-a716-446655440010"
+        processCode: "BAR-TH-171"
+        processName: "Pompe à chaleur air/eau"
+        status: "awaiting_review"
+        confidence: 0.87
+        processingTime: 12500
+        cumacValue: 35000
+        projectTimeline:
+          devisDate: "2025-09-15T00:00:00Z"
+          signatureDate: "2025-09-20T00:00:00Z"
+          worksStartDate: "2025-10-01T00:00:00Z"
+          worksEndDate: "2025-10-15T00:00:00Z"
+          invoiceDate: "2025-10-20T00:00:00Z"
+
     Dossier:
       type: object
       properties:
@@ -3389,17 +3514,25 @@ components:
           description: Unique dossier reference (e.g., CEE-2025-001234)
         status:
           $ref: '#/components/schemas/DossierStatus'
+          deprecated: true
+          description: "DEPRECATED: Use processes array status instead"
         priority:
           $ref: '#/components/schemas/Priority'
         processId:
           type: string
           format: uuid
+          deprecated: true
+          description: "DEPRECATED: Use processes array instead"
         processCode:
           type: string
           example: "BAR-TH-171"
+          deprecated: true
+          description: "DEPRECATED: Use processes array instead"
         processName:
           type: string
           example: "Pompe à chaleur air/eau"
+          deprecated: true
+          description: "DEPRECATED: Use processes array instead"
         installerId:
           type: string
           format: uuid
@@ -3412,6 +3545,8 @@ components:
           format: float
           minimum: 0
           maximum: 1
+          deprecated: true
+          description: "DEPRECATED: Use processes array confidence instead"
         assignedTo:
           type: string
           format: uuid
@@ -3423,12 +3558,28 @@ components:
           type: number
           format: float
           description: Percentage of fields validated (0-100)
+        cumacValue:
+          type: number
+          format: float
+          deprecated: true
+          description: "DEPRECATED: Use processes array cumacValue instead. CUMAC value in kWh cumac"
+        projectTimeline:
+          $ref: '#/components/schemas/ProjectTimeline'
+          deprecated: true
+          description: "DEPRECATED: Use processes array projectTimeline instead"
+        processes:
+          type: array
+          description: Array of CEE processes for this dossier
+          items:
+            $ref: '#/components/schemas/DossierProcess'
         submittedAt:
           type: string
           format: date-time
         validatedAt:
           type: string
           format: date-time
+          deprecated: true
+          description: "DEPRECATED: Use processes array validatedAt instead"
         approvedAt:
           type: string
           format: date-time
@@ -3459,6 +3610,20 @@ components:
         confidenceScore: 0.87
         documentCount: 5
         validationProgress: 65.5
+        cumacValue: 35000
+        projectTimeline:
+          devisDate: "2025-09-15T00:00:00Z"
+          signatureDate: "2025-09-20T00:00:00Z"
+          worksStartDate: "2025-10-01T00:00:00Z"
+          worksEndDate: "2025-10-15T00:00:00Z"
+          invoiceDate: "2025-10-20T00:00:00Z"
+        processes:
+          - id: "660e8400-e29b-41d4-a716-446655440010"
+            processCode: "BAR-TH-171"
+            processName: "Pompe à chaleur air/eau"
+            status: "awaiting_review"
+            confidence: 0.87
+            cumacValue: 35000
         submittedAt: "2025-11-25T14:30:00Z"
 
     DossierListItem:
@@ -3728,6 +3893,17 @@ components:
         documentTypeId:
           type: string
           format: uuid
+        documentTypes:
+          type: array
+          items:
+            type: string
+          description: List of document type codes this rule applies to
+        processTypes:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of process IDs this rule applies to. Empty array means all processes.
         expression:
           type: string
         errorMessage:
