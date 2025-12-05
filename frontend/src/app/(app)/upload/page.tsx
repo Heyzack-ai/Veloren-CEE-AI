@@ -1,174 +1,165 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DocumentUploadArea } from '@/components/document-upload-area';
-import { mockCEEProcesses } from '@/lib/mock-data/processes-detailed';
-import { mockDossiers } from '@/lib/mock-data/dossiers';
-import { CEEProcess, ProcessCategory, UploadedFile } from '@/types/installer';
+import { BulkDocumentUpload } from '@/components/bulk-document-upload';
+import { quickScanDocuments, getAllCEEProcesses, submitDossier } from '@/lib/mock-data/document-analysis';
 import {
-  Search,
   ChevronRight,
-  ChevronLeft,
   Check,
   Upload,
   FileText,
   CheckCircle,
-  AlertCircle,
+  Loader2,
+  Info,
+  Search,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  BulkUploadedFile,
+  BulkUploadStep,
+  DetectedDocument,
+  DetectedProcess,
+} from '@/types/bulk-upload';
 
-type Step = 'select_operation' | 'upload_documents' | 'review' | 'confirmation';
+type Step = BulkUploadStep;
 
 export default function UploadPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  
-  // Check for resubmit mode
-  const resubmitDossierId = searchParams.get('resubmit');
-  const correctionsParam = searchParams.get('corrections');
-  const correctionsNeeded = correctionsParam ? decodeURIComponent(correctionsParam).split(',') : [];
-  const isResubmitMode = !!resubmitDossierId;
-  
-  // Get the original dossier if in resubmit mode
-  const originalDossier = isResubmitMode ? mockDossiers.find(d => d.id === resubmitDossierId) : null;
-  
-  const [currentStep, setCurrentStep] = useState<Step>(isResubmitMode ? 'upload_documents' : 'select_operation');
-  const [selectedProcess, setSelectedProcess] = useState<CEEProcess | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [category, setCategory] = useState<ProcessCategory>('all');
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile>>({});
-  const [beneficiaryInfo, setBeneficiaryInfo] = useState({
-    name: '',
-    address: '',
-    city: '',
-    postalCode: '',
-    email: '',
-    phone: '',
-  });
-  const [confirmations, setConfirmations] = useState({
-    legible: false,
-    correct: false,
-    understand: false,
-  });
+  // Simplified flow state
+  const [currentStep, setCurrentStep] = useState<Step>('upload');
+  const [uploadedFiles, setUploadedFiles] = useState<BulkUploadedFile[]>([]);
+  const [detectedDocuments, setDetectedDocuments] = useState<DetectedDocument[]>([]);
+  const [detectedProcesses, setDetectedProcesses] = useState<DetectedProcess[]>([]);
+  const [selectedProcessCodes, setSelectedProcessCodes] = useState<string[]>([]);
+  const [showProcessSearch, setShowProcessSearch] = useState(false);
+  const [processSearchQuery, setProcessSearchQuery] = useState('');
+  const [allProcesses, setAllProcesses] = useState<DetectedProcess[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [beneficiaryEmail, setBeneficiaryEmail] = useState('');
   const [newDossierId, setNewDossierId] = useState('');
 
-  // Auto-select process when in resubmit mode
-  useEffect(() => {
-    if (isResubmitMode && originalDossier) {
-      const process = mockCEEProcesses.find(p => p.code === originalDossier.processCode);
-      if (process) {
-        setSelectedProcess(process);
-      }
-      // Pre-fill beneficiary info
-      setBeneficiaryInfo({
-        name: originalDossier.beneficiary.name,
-        address: originalDossier.beneficiary.address,
-        city: originalDossier.beneficiary.city,
-        postalCode: originalDossier.beneficiary.postalCode,
-        email: '',
-        phone: '',
-      });
-    }
-  }, [isResubmitMode, originalDossier]);
-
   const steps: { id: Step; label: string }[] = [
-    { id: 'select_operation', label: 'Sélectionner l\'opération' },
-    { id: 'upload_documents', label: 'Télécharger les documents' },
-    { id: 'review', label: 'Vérifier' },
-    { id: 'confirmation', label: 'Confirmer' },
+    { id: 'upload', label: 'Télécharger' },
+    { id: 'review', label: 'Confirmer' },
+    { id: 'confirmation', label: 'Soumis' },
   ];
 
   const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
 
-  const filteredProcesses = mockCEEProcesses.filter((p) => {
-    if (category !== 'all' && p.category !== category) return false;
-    if (searchQuery) {
-      return (
-        p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    return true;
-  });
+  // Load all processes for search
+  useEffect(() => {
+    setAllProcesses(getAllCEEProcesses());
+  }, []);
 
-  const handleFileSelect = (documentType: string, file: File) => {
-    const fileId = `${documentType}-${Date.now()}`;
-    setUploadedFiles((prev) => ({
-      ...prev,
-      [documentType]: {
-        id: fileId,
-        file,
-        documentType,
-        status: 'uploading',
-        progress: 0,
-      },
+  // Quick scan when files complete uploading
+  useEffect(() => {
+    const completedFiles = uploadedFiles.filter((f) => f.status === 'completed');
+    if (completedFiles.length > 0) {
+      const { detectedDocuments: docs, detectedProcesses: procs } = quickScanDocuments(uploadedFiles);
+      setDetectedDocuments(docs);
+      setDetectedProcesses(procs);
+      // Auto-select detected processes
+      setSelectedProcessCodes(procs.map((p) => p.code));
+    }
+  }, [uploadedFiles]);
+
+  // Handle multiple file selection
+  const handleFilesSelect = useCallback((files: File[]) => {
+    const newFiles: BulkUploadedFile[] = files.map((file) => ({
+      id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      file,
+      status: 'pending' as const,
+      progress: 0,
     }));
 
-    // Simulate upload
+    setUploadedFiles((prev) => [...prev, ...newFiles]);
+
+    // Simulate upload for each file
+    newFiles.forEach((uploadFile) => {
+      simulateFileUpload(uploadFile.id);
+    });
+  }, []);
+
+  // Simulate file upload with progress
+  const simulateFileUpload = (fileId: string) => {
+    setUploadedFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId ? { ...f, status: 'uploading' as const, progress: 0 } : f
+      )
+    );
+
     let progress = 0;
     const interval = setInterval(() => {
-      progress += 10;
+      progress += 15;
       if (progress >= 100) {
         clearInterval(interval);
-        setUploadedFiles((prev) => ({
-          ...prev,
-          [documentType]: {
-            ...prev[documentType],
-            status: 'completed',
-            progress: 100,
-          },
-        }));
+        setUploadedFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, status: 'completed' as const, progress: 100 } : f
+          )
+        );
       } else {
-        setUploadedFiles((prev) => ({
-          ...prev,
-          [documentType]: {
-            ...prev[documentType],
-            progress,
-          },
-        }));
+        setUploadedFiles((prev) =>
+          prev.map((f) => (f.id === fileId ? { ...f, progress } : f))
+        );
       }
-    }, 200);
+    }, 150);
   };
 
-  const handleFileRemove = (documentType: string) => {
-    setUploadedFiles((prev) => {
-      const newFiles = { ...prev };
-      delete newFiles[documentType];
-      return newFiles;
-    });
+  // Handle file removal
+  const handleFileRemove = useCallback((fileId: string) => {
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
+  }, []);
+
+  // Toggle process selection
+  const toggleProcessSelection = (code: string) => {
+    setSelectedProcessCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
   };
 
-  const canProceedToUpload = selectedProcess !== null;
-  
-  // In resubmit mode, only corrections are required; otherwise all required docs
-  const requiredDocs = selectedProcess?.requiredDocuments.filter((d) => {
-    if (isResubmitMode && correctionsNeeded.length > 0) {
-      // In resubmit mode, only documents needing correction are required
-      return correctionsNeeded.some(
-        c => c.toLowerCase() === d.name.toLowerCase() || c.toLowerCase() === d.type.toLowerCase()
-      );
+  // Add a process from search
+  const addProcess = (process: DetectedProcess) => {
+    if (!selectedProcessCodes.includes(process.code)) {
+      setSelectedProcessCodes((prev) => [...prev, process.code]);
+      if (!detectedProcesses.find((p) => p.code === process.code)) {
+        setDetectedProcesses((prev) => [...prev, { ...process, fromAttestation: false }]);
+      }
     }
-    return d.requirement === 'required';
-  }) || [];
-  
-  const uploadedRequiredCount = requiredDocs.filter((doc) => uploadedFiles[doc.type]?.status === 'completed').length;
-  const canProceedToReview = uploadedRequiredCount === requiredDocs.length;
-  const canSubmit = confirmations.legible && confirmations.correct && confirmations.understand;
+    setShowProcessSearch(false);
+    setProcessSearchQuery('');
+  };
 
-  const handleSubmit = () => {
-    // Simulate submission
-    const dossierId = `VAL-2025-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-    setNewDossierId(dossierId);
-    setCurrentStep('confirmation');
+  // Filter processes for search
+  const filteredProcesses = allProcesses.filter(
+    (p) =>
+      !selectedProcessCodes.includes(p.code) &&
+      (p.code.toLowerCase().includes(processSearchQuery.toLowerCase()) ||
+        p.name.toLowerCase().includes(processSearchQuery.toLowerCase()))
+  );
+
+  const completedFilesCount = uploadedFiles.filter((f) => f.status === 'completed').length;
+  // Process selection is optional - backend will detect processes automatically from attestation
+  const canSubmit = completedFilesCount > 0 && !isSubmitting;
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const result = await submitDossier(uploadedFiles, selectedProcessCodes, {
+        email: beneficiaryEmail || undefined,
+      });
+      setNewDossierId(result.dossierId);
+      setCurrentStep('confirmation');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -194,7 +185,7 @@ export default function UploadPage() {
               </div>
               <span
                 className={cn(
-                  'text-sm font-medium',
+                  'text-sm font-medium hidden sm:inline',
                   index <= currentStepIndex ? 'text-foreground' : 'text-muted-foreground'
                 )}
               >
@@ -213,402 +204,299 @@ export default function UploadPage() {
         ))}
       </div>
 
-      {/* Step 1: Select Operation */}
-      {currentStep === 'select_operation' && (
+      {/* Step 1: Upload Documents */}
+      {currentStep === 'upload' && (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-heading font-bold">Sélectionner l'opération CEE</h1>
+            <h1 className="text-2xl font-heading font-bold">Télécharger vos documents</h1>
             <p className="text-muted-foreground mt-1">
-              Choisissez le type d'opération pour votre dossier
+              Déposez tous vos documents. Nous détecterons automatiquement les opérations CEE
+              à partir de l'Attestation sur l'honneur.
             </p>
           </div>
 
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher une opération..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-
-            <Tabs value={category} onValueChange={(v) => setCategory(v as ProcessCategory)}>
-              <TabsList>
-                <TabsTrigger value="all">Toutes</TabsTrigger>
-                <TabsTrigger value="residential">Résidentiel</TabsTrigger>
-                <TabsTrigger value="tertiary">Tertiaire</TabsTrigger>
-                <TabsTrigger value="industrial">Industriel</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {filteredProcesses.map((process) => (
-                <Card
-                  key={process.code}
-                  className={cn(
-                    'cursor-pointer transition-all hover:border-primary',
-                    selectedProcess?.code === process.code && 'border-primary bg-primary/5'
-                  )}
-                  onClick={() => setSelectedProcess(process)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="secondary">{process.code}</Badge>
-                          {selectedProcess?.code === process.code && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                        <h3 className="font-semibold mb-1">{process.name}</h3>
-                        <p className="text-sm text-muted-foreground">{process.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {selectedProcess && (
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-3">Documents requis</h3>
-                <ul className="space-y-2">
-                  {selectedProcess.requiredDocuments.map((doc) => (
-                    <li key={doc.type} className="flex items-center gap-2 text-sm">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span>{doc.name}</span>
-                      {doc.requirement === 'required' && (
-                        <Badge variant="destructive" className="text-xs">
-                          Requis
-                        </Badge>
-                      )}
-                      {doc.requirement === 'optional' && (
-                        <Badge variant="secondary" className="text-xs">
-                          Optionnel
-                        </Badge>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="flex justify-end">
-            <Button
-              onClick={() => setCurrentStep('upload_documents')}
-              disabled={!canProceedToUpload}
-            >
-              Suivant
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Upload Documents */}
-      {currentStep === 'upload_documents' && selectedProcess && (
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-heading font-bold">
-              {isResubmitMode ? 'Soumettre les documents corrigés' : 'Télécharger les documents'}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {selectedProcess.code} - {selectedProcess.name}
-            </p>
-          </div>
-
-          {/* Resubmit Mode Banner */}
-          {isResubmitMode && correctionsNeeded.length > 0 && (
-            <Card className="border-yellow-200 bg-yellow-50">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="font-semibold text-yellow-900">Corrections requises</h3>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      Veuillez télécharger à nouveau les documents suivants avec les corrections demandées :
-                    </p>
-                    <ul className="mt-2 space-y-1">
-                      {correctionsNeeded.map((docType) => (
-                        <li key={docType} className="text-sm text-yellow-800 flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-yellow-600" />
-                          {docType}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="space-y-6">
-            {selectedProcess.requiredDocuments.map((doc) => {
-              const needsCorrection = correctionsNeeded.some(
-                c => c.toLowerCase() === doc.name.toLowerCase() || c.toLowerCase() === doc.type.toLowerCase()
-              );
-              
-              return (
-                <div key={doc.type} className={cn(
-                  "space-y-3 p-4 rounded-lg border-2",
-                  needsCorrection ? "border-yellow-400 bg-yellow-50" : "border-transparent"
-                )}>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{doc.name}</h3>
-                        {needsCorrection && (
-                          <Badge className="bg-yellow-600 text-xs">
-                            Correction requise
-                          </Badge>
-                        )}
-                        {!needsCorrection && doc.requirement === 'required' && (
-                          <Badge variant="destructive" className="text-xs">
-                            Requis
-                          </Badge>
-                        )}
-                        {!needsCorrection && doc.requirement === 'optional' && (
-                          <Badge variant="secondary" className="text-xs">
-                            Optionnel
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">{doc.description}</p>
-                    </div>
-                  </div>
-
-                  <DocumentUploadArea
-                    documentType={doc.type}
-                    acceptedFormats={doc.acceptedFormats}
-                    maxSize={doc.maxSize}
-                    onFileSelect={(file) => handleFileSelect(doc.type, file)}
-                    onFileRemove={() => handleFileRemove(doc.type)}
-                    uploadedFile={
-                      uploadedFiles[doc.type]
-                        ? {
-                            name: uploadedFiles[doc.type].file.name,
-                            size: uploadedFiles[doc.type].file.size,
-                            status: uploadedFiles[doc.type].status,
-                            progress: uploadedFiles[doc.type].progress,
-                          }
-                        : undefined
-                    }
-                  />
-                </div>
-              );
-            })}
-          </div>
-
-          <Card>
+          {/* Info Banner */}
+          <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Progression</span>
-                <span className="text-sm text-muted-foreground">
-                  {uploadedRequiredCount} / {requiredDocs.length} documents requis téléchargés
-                </span>
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-blue-900">Téléchargement simplifié</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Vous pouvez télécharger un PDF contenant plusieurs documents.
+                    L'analyse complète se fait en arrière-plan après soumission.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <div className="flex justify-between">
-            {isResubmitMode ? (
-              <Button variant="outline" asChild>
-                <Link href={`/my-dossiers/${resubmitDossierId}`}>
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Retour au dossier
-                </Link>
-              </Button>
-            ) : (
-              <Button variant="outline" onClick={() => setCurrentStep('select_operation')}>
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Retour
-              </Button>
-            )}
-            <Button onClick={() => setCurrentStep('review')} disabled={!canProceedToReview}>
-              Suivant
+          <BulkDocumentUpload
+            files={uploadedFiles}
+            onFilesSelect={handleFilesSelect}
+            onFileRemove={handleFileRemove}
+            isAnalyzing={false}
+            disabled={false}
+          />
+
+          {/* Quick Document Detection Results */}
+          {detectedDocuments.length > 0 && (
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <h3 className="font-semibold">Documents détectés ({detectedDocuments.length})</h3>
+                <div className="space-y-2">
+                  {detectedDocuments.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-3 rounded-lg border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">{doc.originalFileName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {doc.classificationLabel}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant={doc.confidence >= 0.8 ? 'default' : 'secondary'}>
+                        {Math.round(doc.confidence * 100)}% confiance
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Detected Processes from Attestation */}
+          {detectedProcesses.length > 0 && (
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">
+                    Opérations CEE détectées ({detectedProcesses.length})
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Détectées depuis l'Attestation sur l'honneur
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {detectedProcesses.map((process) => (
+                    <div
+                      key={process.code}
+                      className={cn(
+                        'flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all',
+                        selectedProcessCodes.includes(process.code)
+                          ? 'border-primary bg-primary/5'
+                          : 'border-muted hover:border-primary/50'
+                      )}
+                      onClick={() => toggleProcessSelection(process.code)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={selectedProcessCodes.includes(process.code)}
+                          onCheckedChange={() => toggleProcessSelection(process.code)}
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{process.code}</Badge>
+                            <span className="font-medium">{process.name}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {process.description}
+                          </p>
+                        </div>
+                      </div>
+                      {process.fromAttestation && (
+                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                          Détecté
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Add More Processes */}
+          <Card>
+            <CardContent className="p-4">
+              {!showProcessSearch ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowProcessSearch(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter une autre opération CEE
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher par code ou nom (ex: BAR-TH-171, pompe à chaleur...)"
+                      value={processSearchQuery}
+                      onChange={(e) => setProcessSearchQuery(e.target.value)}
+                      autoFocus
+                    />
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      setShowProcessSearch(false);
+                      setProcessSearchQuery('');
+                    }}>
+                      Annuler
+                    </Button>
+                  </div>
+                  {processSearchQuery && (
+                    <div className="max-h-60 overflow-y-auto space-y-1">
+                      {filteredProcesses.slice(0, 10).map((process) => (
+                        <div
+                          key={process.code}
+                          className="flex items-center justify-between p-2 rounded hover:bg-muted cursor-pointer"
+                          onClick={() => addProcess(process)}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{process.code}</Badge>
+                              <span className="text-sm">{process.name}</span>
+                            </div>
+                          </div>
+                          <Plus className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      ))}
+                      {filteredProcesses.length === 0 && (
+                        <p className="text-sm text-muted-foreground p-2">
+                          Aucune opération trouvée
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Email for notifications */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="email" className="whitespace-nowrap">Email (pour notifications)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  value={beneficiaryEmail}
+                  onChange={(e) => setBeneficiaryEmail(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Vous recevrez un email si des documents sont manquants après l'analyse.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setCurrentStep('review')}
+              disabled={!canSubmit}
+              size="lg"
+            >
+              Confirmer et soumettre
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Review */}
-      {currentStep === 'review' && selectedProcess && (
+      {/* Step 2: Review and Submit */}
+      {currentStep === 'review' && (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-heading font-bold">Vérifier les informations</h1>
+            <h1 className="text-2xl font-heading font-bold">Confirmer la soumission</h1>
             <p className="text-muted-foreground mt-1">
               Vérifiez les informations avant de soumettre
             </p>
           </div>
 
+          {/* Summary */}
           <Card>
             <CardContent className="p-6 space-y-4">
-              <h3 className="font-semibold">Informations bénéficiaire (optionnel)</h3>
-              <p className="text-sm text-muted-foreground">
-                Ces informations aident à améliorer la précision de l'extraction automatique
-              </p>
+              <h3 className="font-semibold">Récapitulatif</h3>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Nom complet</Label>
-                  <Input
-                    id="name"
-                    value={beneficiaryInfo.name}
-                    onChange={(e) =>
-                      setBeneficiaryInfo({ ...beneficiaryInfo, name: e.target.value })
-                    }
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={beneficiaryInfo.email}
-                    onChange={(e) =>
-                      setBeneficiaryInfo({ ...beneficiaryInfo, email: e.target.value })
-                    }
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Téléphone</Label>
-                  <Input
-                    id="phone"
-                    value={beneficiaryInfo.phone}
-                    onChange={(e) =>
-                      setBeneficiaryInfo({ ...beneficiaryInfo, phone: e.target.value })
-                    }
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="address">Adresse</Label>
-                  <Input
-                    id="address"
-                    value={beneficiaryInfo.address}
-                    onChange={(e) =>
-                      setBeneficiaryInfo({ ...beneficiaryInfo, address: e.target.value })
-                    }
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="city">Ville</Label>
-                  <Input
-                    id="city"
-                    value={beneficiaryInfo.city}
-                    onChange={(e) =>
-                      setBeneficiaryInfo({ ...beneficiaryInfo, city: e.target.value })
-                    }
-                    className="mt-1.5"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="postalCode">Code postal</Label>
-                  <Input
-                    id="postalCode"
-                    value={beneficiaryInfo.postalCode}
-                    onChange={(e) =>
-                      setBeneficiaryInfo({ ...beneficiaryInfo, postalCode: e.target.value })
-                    }
-                    className="mt-1.5"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <h3 className="font-semibold">Documents téléchargés</h3>
-              <div className="space-y-2">
-                {Object.values(uploadedFiles).map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center justify-between p-3 rounded-lg border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">{file.file.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedProcess.requiredDocuments.find((d) => d.type === file.documentType)?.name}
-                        </p>
-                      </div>
-                    </div>
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <h3 className="font-semibold">Confirmations</h3>
               <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="legible"
-                    checked={confirmations.legible}
-                    onCheckedChange={(checked) =>
-                      setConfirmations({ ...confirmations, legible: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="legible" className="cursor-pointer">
-                    Je confirme que tous les documents sont lisibles
-                  </Label>
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="text-muted-foreground">Documents téléchargés</span>
+                  <span className="font-medium">{completedFilesCount} fichier(s)</span>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="correct"
-                    checked={confirmations.correct}
-                    onCheckedChange={(checked) =>
-                      setConfirmations({ ...confirmations, correct: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="correct" className="cursor-pointer">
-                    Je confirme que les informations du bénéficiaire sont correctes
-                  </Label>
+
+                <div className="py-2 border-b">
+                  <span className="text-muted-foreground">Opérations CEE sélectionnées</span>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedProcessCodes.map((code) => {
+                      const process = detectedProcesses.find((p) => p.code === code) ||
+                        allProcesses.find((p) => p.code === code);
+                      return (
+                        <Badge key={code} variant="secondary">
+                          {code} - {process?.name || 'Inconnu'}
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="understand"
-                    checked={confirmations.understand}
-                    onCheckedChange={(checked) =>
-                      setConfirmations({ ...confirmations, understand: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="understand" className="cursor-pointer">
-                    Je comprends que les documents seront vérifiés
-                  </Label>
+
+                {beneficiaryEmail && (
+                  <div className="flex items-center justify-between py-2 border-b">
+                    <span className="text-muted-foreground">Email de notification</span>
+                    <span className="font-medium">{beneficiaryEmail}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Info about background processing */}
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-blue-900">Traitement en arrière-plan</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Après soumission, notre système analysera vos documents en détail.
+                    Si des documents sont manquants ou incomplets, vous recevrez un email
+                    vous invitant à les compléter.
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <div className="flex justify-between">
-            <Button variant="outline" onClick={() => setCurrentStep('upload_documents')}>
-              <ChevronLeft className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={() => setCurrentStep('upload')}>
               Retour
             </Button>
-            <Button onClick={handleSubmit} disabled={!canSubmit}>
-              <Upload className="h-4 w-4 mr-2" />
-              Soumettre le dossier
+            <Button onClick={handleSubmit} disabled={isSubmitting} size="lg">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Soumission en cours...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Soumettre le dossier
+                </>
+              )}
             </Button>
           </div>
         </div>
       )}
 
-      {/* Step 4: Confirmation */}
+      {/* Step 3: Confirmation */}
       {currentStep === 'confirmation' && (
         <div className="space-y-6 text-center py-12">
           <div className="flex justify-center">
@@ -619,37 +507,53 @@ export default function UploadPage() {
 
           <div>
             <h1 className="text-3xl font-heading font-bold mb-2">
-              {isResubmitMode ? 'Documents corrigés soumis !' : 'Dossier soumis avec succès !'}
+              Dossier soumis avec succès !
             </h1>
             <p className="text-xl font-semibold text-primary">
-              {isResubmitMode ? originalDossier?.reference : newDossierId}
+              {newDossierId}
             </p>
           </div>
 
-          <Card className="max-w-md mx-auto">
+          <Card className="max-w-lg mx-auto">
             <CardContent className="p-6 space-y-4 text-left">
               <p className="text-muted-foreground">
-                {isResubmitMode 
-                  ? 'Vos documents corrigés sont en cours de vérification. Vous recevrez une notification lorsque la nouvelle validation sera terminée.'
-                  : 'Vos documents sont en cours de traitement. Vous recevrez une notification lorsque la validation sera terminée.'
-                }
+                Vos documents sont maintenant en cours de traitement. Notre système va :
               </p>
-              <div className="flex items-center gap-2 text-sm">
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Analyser et classer tous vos documents</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Vérifier que tous les documents requis sont présents</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <span>Vous envoyer un email en cas de documents manquants</span>
+                </li>
+              </ul>
+              <div className="flex items-center gap-2 text-sm pt-2 border-t">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
-                  Temps de traitement estimé : 24-48 heures
+                  Temps de traitement : quelques minutes à 24 heures
                 </span>
               </div>
             </CardContent>
           </Card>
 
           <div className="flex gap-4 justify-center">
-            {!isResubmitMode && (
-              <Button variant="outline" onClick={() => router.push('/upload')}>
-                <Upload className="h-4 w-4 mr-2" />
-                Télécharger un autre dossier
-              </Button>
-            )}
+            <Button variant="outline" onClick={() => {
+              setCurrentStep('upload');
+              setUploadedFiles([]);
+              setDetectedDocuments([]);
+              setDetectedProcesses([]);
+              setSelectedProcessCodes([]);
+              setBeneficiaryEmail('');
+            }}>
+              <Upload className="h-4 w-4 mr-2" />
+              Nouveau dossier
+            </Button>
             <Button asChild>
               <Link href="/my-dossiers">Voir mes dossiers</Link>
             </Button>

@@ -719,6 +719,235 @@ paths:
           $ref: '#/components/responses/NotFound'
 
   # ============================================
+  # BULK UPLOAD ENDPOINTS (Installer Portal)
+  # ============================================
+  /portal/bulk-upload:
+    post:
+      tags: [Installer Portal, Documents]
+      summary: Bulk upload documents with automatic process detection
+      description: |
+        Upload one or more documents for a new dossier. The system will:
+        - Accept multi-page PDFs and split them automatically into individual documents
+        - Detect CEE process codes from Attestation sur l'honneur documents
+        - Create a dossier and start background processing
+        - Validate document completeness asynchronously
+        - Send email notification to installer if documents are missing
+
+        The endpoint returns immediately after upload acceptance. All document
+        processing, validation, and notifications happen in the background.
+      operationId: bulkUploadDocuments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BulkUploadRequest'
+      responses:
+        '202':
+          description: Upload accepted, processing started in background
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkUploadResponse'
+        '400':
+          description: Invalid request (no files, invalid file types, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: File size exceeds limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /portal/bulk-upload/{dossierId}/status:
+    get:
+      tags: [Installer Portal, Documents]
+      summary: Get bulk upload processing status
+      description: |
+        Check the status of a bulk upload submission. Returns information about:
+        - Overall processing status
+        - Detected CEE processes
+        - Document classification results
+        - Missing documents (if any)
+        - Validation status
+      operationId: getBulkUploadStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Processing status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkUploadStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /portal/bulk-upload/{dossierId}/add-documents:
+    post:
+      tags: [Installer Portal, Documents]
+      summary: Add additional documents to existing dossier
+      description: |
+        Upload additional documents to an existing dossier (e.g., after receiving
+        a missing documents notification). The system will:
+        - Add documents to the existing dossier
+        - Re-run document completeness validation
+        - Update processing status
+      operationId: addDocumentsToDossier
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Additional document files to upload
+                  minItems: 1
+      responses:
+        '202':
+          description: Documents added, reprocessing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkUploadResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /processes/detect:
+    post:
+      tags: [Processes]
+      summary: Detect CEE processes from documents
+      description: |
+        Analyze uploaded documents (particularly Attestation sur l'honneur) to detect
+        which CEE processes they correspond to. This is a preview/helper endpoint that
+        can be used before bulk upload to show detected processes to the installer.
+      operationId: detectProcessesFromDocuments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Document files to analyze
+      responses:
+        '200':
+          description: Detected processes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDetectionResult'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /documents/{documentId}/split:
+    post:
+      tags: [Documents]
+      summary: Split multi-page PDF into individual documents
+      description: |
+        Split a multi-page PDF document into individual documents based on
+        detected document boundaries. This is typically called automatically
+        during bulk upload processing but can be triggered manually.
+      operationId: splitDocument
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                splitMethod:
+                  type: string
+                  enum: [auto, manual]
+                  default: auto
+                  description: |
+                    - auto: AI-based document boundary detection
+                    - manual: Split at specified page numbers
+                manualSplitPages:
+                  type: array
+                  items:
+                    type: integer
+                  description: Page numbers where to split (only for manual method)
+      responses:
+        '202':
+          description: Split operation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentSplitResult'
+        '400':
+          description: Document cannot be split (not a PDF or single page)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================
   # VALIDATION ENDPOINTS
   # ============================================
   /documents/{documentId}/fields:
@@ -4292,4 +4521,340 @@ components:
           type: array
           items:
             type: string
+
+    # ============================================
+    # BULK UPLOAD SCHEMAS
+    # ============================================
+    BulkUploadRequest:
+      type: object
+      required: [files, notificationEmail]
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: |
+            Document files to upload. Supports PDF, JPEG, PNG formats.
+            Multi-page PDFs will be automatically split into individual documents.
+          minItems: 1
+        selectedProcessCodes:
+          type: array
+          items:
+            type: string
+          description: |
+            Optional list of CEE process codes the installer believes they are
+            submitting for. If not provided, processes will be auto-detected from
+            Attestation sur l'honneur documents.
+          example: ["BAR-TH-171", "BAR-TH-127"]
+        notificationEmail:
+          type: string
+          format: email
+          description: Email address for notifications about missing documents or processing status
+          example: "installer@example.com"
+        beneficiaryName:
+          type: string
+          description: Optional beneficiary name (can be extracted from documents)
+        beneficiaryAddress:
+          type: string
+          description: Optional beneficiary address (can be extracted from documents)
+        notes:
+          type: string
+          description: Optional notes from the installer
+          maxLength: 1000
+
+    BulkUploadResponse:
+      type: object
+      required: [dossierId, status, message]
+      properties:
+        dossierId:
+          type: string
+          format: uuid
+          description: ID of the created dossier
+        dossierReference:
+          type: string
+          description: Human-readable dossier reference number
+          example: "CEE-2025-001234"
+        status:
+          type: string
+          enum: [accepted, processing]
+          description: Current status of the upload
+        message:
+          type: string
+          description: User-friendly status message
+          example: "Vos documents ont été reçus et sont en cours de traitement. Vous recevrez un email de confirmation."
+        filesReceived:
+          type: integer
+          description: Number of files received
+        estimatedProcessingTime:
+          type: string
+          description: Estimated time for processing completion
+          example: "5-10 minutes"
+        statusUrl:
+          type: string
+          format: uri
+          description: URL to check processing status
+        createdAt:
+          type: string
+          format: date-time
+
+    BulkUploadStatus:
+      type: object
+      required: [dossierId, overallStatus]
+      properties:
+        dossierId:
+          type: string
+          format: uuid
+        dossierReference:
+          type: string
+          example: "CEE-2025-001234"
+        overallStatus:
+          type: string
+          enum: [processing, awaiting_documents, ready_for_validation, validated, rejected]
+          description: |
+            - processing: Documents are being analyzed
+            - awaiting_documents: Missing required documents, email sent to installer
+            - ready_for_validation: All documents present, awaiting validator review
+            - validated: Dossier has been validated
+            - rejected: Dossier has been rejected
+        processingProgress:
+          type: object
+          properties:
+            totalSteps:
+              type: integer
+              example: 5
+            completedSteps:
+              type: integer
+              example: 3
+            currentStep:
+              type: string
+              example: "Validation des documents"
+        detectedProcesses:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetectedProcess'
+          description: CEE processes detected from Attestation sur l'honneur
+        selectedProcesses:
+          type: array
+          items:
+            type: string
+          description: Process codes selected by installer or confirmed by system
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClassifiedDocument'
+          description: List of uploaded/detected documents with classification
+        missingDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/MissingDocument'
+          description: Required documents that are missing
+        validationErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              severity:
+                type: string
+                enum: [error, warning]
+        notificationsSent:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [missing_documents, processing_complete, validation_complete]
+              sentAt:
+                type: string
+                format: date-time
+              email:
+                type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DetectedProcess:
+      type: object
+      required: [code, name, confidence]
+      properties:
+        code:
+          type: string
+          description: CEE process code
+          example: "BAR-TH-171"
+        name:
+          type: string
+          description: Process name
+          example: "Pompe à chaleur de type air/eau ou eau/eau"
+        category:
+          type: string
+          description: Process category
+          example: "Thermique"
+        description:
+          type: string
+          description: Brief description of the process
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Confidence score of the detection
+          example: 0.95
+        detectedFrom:
+          type: string
+          description: Document from which this process was detected
+          example: "attestation_honneur_171.pdf"
+        requiredDocuments:
+          type: array
+          items:
+            type: string
+          description: List of required document types for this process
+          example: ["devis", "facture", "attestation_honneur", "photos"]
+
+    ClassifiedDocument:
+      type: object
+      required: [id, filename, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        originalFilename:
+          type: string
+          description: Original uploaded filename
+        filename:
+          type: string
+          description: Stored filename
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        classificationLabel:
+          type: string
+          description: Human-readable classification label
+          example: "Attestation sur l'honneur"
+        classificationConfidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        status:
+          type: string
+          enum: [uploading, processing, classified, extraction_complete, error]
+        detectedProcessCodes:
+          type: array
+          items:
+            type: string
+          description: Process codes detected in this document (for attestations)
+        pageCount:
+          type: integer
+          description: Number of pages in the document
+        splitFromDocument:
+          type: string
+          format: uuid
+          description: If this document was split from a multi-page PDF, the original document ID
+        extractedFields:
+          type: object
+          additionalProperties: true
+          description: Key fields extracted from the document
+        errorMessage:
+          type: string
+          description: Error message if processing failed
+
+    MissingDocument:
+      type: object
+      required: [documentType, processCode]
+      properties:
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        documentTypeName:
+          type: string
+          description: Human-readable document type name
+          example: "Facture"
+        processCode:
+          type: string
+          description: CEE process code requiring this document
+          example: "BAR-TH-171"
+        isRequired:
+          type: boolean
+          default: true
+          description: Whether this document is mandatory
+        description:
+          type: string
+          description: Description of what document is needed
+          example: "Facture de l'installation de la pompe à chaleur"
+
+    ProcessDetectionResult:
+      type: object
+      required: [detectedProcesses, analyzedDocuments]
+      properties:
+        detectedProcesses:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetectedProcess'
+        analyzedDocuments:
+          type: array
+          items:
+            type: object
+            properties:
+              filename:
+                type: string
+              documentType:
+                type: string
+              processCodesFound:
+                type: array
+                items:
+                  type: string
+        suggestedProcesses:
+          type: array
+          items:
+            type: string
+          description: Recommended process codes based on analysis
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Any warnings during detection
+
+    DocumentSplitResult:
+      type: object
+      required: [originalDocumentId, status]
+      properties:
+        originalDocumentId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [processing, completed, failed]
+        splitDocuments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              pageRange:
+                type: object
+                properties:
+                  start:
+                    type: integer
+                  end:
+                    type: integer
+              detectedType:
+                type: string
+              confidence:
+                type: number
+                format: float
+        totalPagesProcessed:
+          type: integer
+        documentsCreated:
+          type: integer
+        errorMessage:
+          type: string
+          description: Error message if split failed
 
