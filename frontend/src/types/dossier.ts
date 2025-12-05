@@ -51,6 +51,30 @@ export type ValidationRule = {
   overrideReason?: string;
 };
 
+export type ProjectTimeline = {
+  devisDate: Date;
+  signatureDate: Date;
+  worksStartDate: Date;
+  worksEndDate: Date;
+  invoiceDate: Date;
+};
+
+export type DossierProcess = {
+  id: string;
+  processCode: string;
+  processName: string;
+  status: DossierStatus;
+  confidence: number;
+  documents: Document[];
+  extractedData: ExtractedField[];
+  validationResults: ValidationRule[];
+  processingTime?: number;
+  validatedAt?: Date;
+  validatedBy?: string;
+  cumacValue?: number;
+  projectTimeline?: ProjectTimeline;
+};
+
 export type Dossier = {
   id: string;
   reference: string;
@@ -72,4 +96,7 @@ export type Dossier = {
   extractedData: ExtractedField[];
   validationResults: ValidationRule[];
   processingTime?: number;
+  cumacValue?: number;
+  projectTimeline?: ProjectTimeline;
+  processes?: DossierProcess[];
 };

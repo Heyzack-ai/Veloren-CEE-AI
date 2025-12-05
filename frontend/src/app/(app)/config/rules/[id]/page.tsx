@@ -60,6 +60,9 @@ export default function RuleBuilderPage({ params }: PageProps) {
     rule?.appliesTo.processTypes || []
   );
 
+  // Filter/scope for process selection (single select)
+  const [selectedProcessId, setSelectedProcessId] = useState<string>('all');
+
   const [builderMode, setBuilderMode] = useState<'visual' | 'expression'>('visual');
 
   const [conditions, setConditions] = useState([

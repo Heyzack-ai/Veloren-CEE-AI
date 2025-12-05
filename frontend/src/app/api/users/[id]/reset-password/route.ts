@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+// Prevent prerendering - this is a dynamic API route
+export const dynamic = 'force-dynamic';
+
 function upstream(id: string): string {
   const raw = process.env.VITE_AUTH_URL || process.env.NEXT_PUBLIC_AUTH_URL || process.env.NEXT_PUBLIC_VITE_AUTH_URL || "https://api.dev.heyack.ai";
   const url = raw?.trim() || "https://api.dev.heyack.ai";

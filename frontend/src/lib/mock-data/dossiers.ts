@@ -200,11 +200,11 @@ export function getDossiersByValidator(validatorId: string): Dossier[] {
 // Get a specific process from a dossier
 export function getProcessFromDossier(dossierId: string, processId: string): DossierProcess | undefined {
   const dossier = getDossierById(dossierId);
-  if (!dossier) return undefined;
+  if (!dossier || !dossier.processes) return undefined;
   return dossier.processes.find(p => p.id === processId);
 }
 
 // Get dossiers that have processes with a specific status
 export function getDossiersWithProcessStatus(status: DossierStatus): Dossier[] {
-  return mockDossiers.filter(d => d.processes.some(p => p.status === status));
+  return mockDossiers.filter(d => d.processes && d.processes.some(p => p.status === status));
 }
